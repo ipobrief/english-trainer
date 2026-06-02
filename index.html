@@ -85,6 +85,7 @@
     <label>음성 <select id="voiceSel" style="max-width:200px"></select></label>
     <label>속도 <input type="range" id="rate" min="0.6" max="1.1" step="0.05" value="0.9"></label>
     <label><input type="checkbox" id="autoplay" checked> 자동 재생</label>
+    <label><input type="checkbox" id="autoflow" checked> 이어서 말하기</label>
   </div>
 </header>
 <div class="wrap">
@@ -6392,13 +6393,22 @@ function buildVoiceList(){
 }
 speechSynthesis.onvoiceschanged=buildVoiceList; buildVoiceList();
 setTimeout(buildVoiceList,300); // 일부 브라우저는 늦게 로드됨
-function speak(text,rate){
+function speak(text,rate,onend){
   speechSynthesis.cancel();
   const u=new SpeechSynthesisUtterance(text);
   if(enVoice) u.voice=enVoice;
   u.lang=(enVoice&&enVoice.lang)||'en-US';
   u.rate=rate||parseFloat(document.getElementById('rate').value)||0.9;
-  u.pitch=1; speechSynthesis.speak(u);
+  u.pitch=1; if(onend) u.onend=onend; speechSynthesis.speak(u);
+}
+// 준비 완료 알림음
+function beep(){
+  try{const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.connect(g);g.connect(ctx.destination);o.frequency.value=880;
+    g.gain.setValueAtTime(0.15,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.18);
+    o.start();o.stop(ctx.currentTime+0.18);}catch(e){}
 }
 
 /* ---------- 음성 인식 ---------- */
@@ -6413,18 +6423,22 @@ function compare(target,said){
   });
   return {score:Math.round(hit/a.length*100),marks};
 }
-// 마이크 녹음(내 발음 듣기용)
-let mediaRecorder=null, myVoiceUrl=null;
+// 마이크 녹음(내 발음 듣기용) — 스트림을 재사용해 시작 지연/잘림 방지
+let mediaRecorder=null, myVoiceUrl=null, micStream=null;
+async function getMic(){
+  if(micStream && micStream.active) return micStream;
+  micStream=await navigator.mediaDevices.getUserMedia({audio:true});
+  return micStream;
+}
 async function startVoiceRecording(){
   try{
-    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    const stream=await getMic();
     const chunks=[];
     mediaRecorder=new MediaRecorder(stream);
     mediaRecorder.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data)};
     mediaRecorder.onstop=()=>{
       if(myVoiceUrl) URL.revokeObjectURL(myVoiceUrl);
       myVoiceUrl=URL.createObjectURL(new Blob(chunks,{type:mediaRecorder.mimeType}));
-      stream.getTracks().forEach(t=>t.stop());
       showMyVoiceButton();
     };
     mediaRecorder.start();
@@ -6444,13 +6458,20 @@ function showMyVoiceButton(){
   document.getElementById('btnMyVoice').onclick=()=>{new Audio(myVoiceUrl).play()};
   document.getElementById('btnNativeVoice').onclick=()=>speak(current.eng);
 }
-function startRec(){
+async function startRec(){
   if(!SR){document.getElementById('recResult').innerHTML=
     '<span class="w-bad">이 브라우저는 음성인식을 지원하지 않아요. 크롬을 사용하세요.</span>';return}
+  recognizing=true;
+  document.getElementById('btnRec').textContent='🎙️ 준비 중...';
+  document.getElementById('recResult').innerHTML='<span class="meta">🎤 마이크 준비 중...</span>';
+  await startVoiceRecording();           // 녹음이 실제로 시작된 뒤에
   recog=new SR(); recog.lang='en-US'; recog.interimResults=false; recog.maxAlternatives=1;
-  recognizing=true; document.getElementById('btnRec').textContent='🎙️ 듣는 중...';
-  document.getElementById('recResult').textContent='말해보세요...';
-  startVoiceRecording();
+  recog.onstart=()=>{                     // 인식 엔진이 실제로 켜진 순간 신호
+    beep();
+    document.getElementById('btnRec').textContent='🎙️ 듣는 중...';
+    document.getElementById('recResult').innerHTML=
+      '<span style="color:var(--good);font-weight:700;font-size:18px">🎙️ 지금 말하세요!</span>';
+  };
   recog.onresult=e=>{
     const said=e.results[0][0].transcript;
     const {score,marks}=compare(current.eng,said);
@@ -6484,7 +6505,15 @@ function renderLearn(){
   document.getElementById('meta').textContent='';
   document.getElementById('recResult').innerHTML='';
   renderWordChips(current.eng);
-  if(document.getElementById('autoplay').checked) speak(current.eng);
+  lsSet('et_learnidx', String(learnIdx));   // 마지막 위치 저장(이어서 학습)
+  const auto=document.getElementById('autoplay').checked;
+  const flow=document.getElementById('autoflow').checked;
+  if(auto){
+    // 원어민 발음 재생 → 끝나면 자동으로 따라 말하기 시작
+    speak(current.eng, null, ()=>{ if(flow && SR) startRec(); });
+  } else if(flow && SR){
+    startRec();
+  }
 }
 
 /* ---------- 단어 사전 ---------- */
@@ -6553,12 +6582,18 @@ function renderTrain(){
   document.getElementById('trResult').innerHTML='';
   document.getElementById('trManualRow').style.display='none';
 }
-function trStartRec(){
+async function trStartRec(){
   if(!SR){document.getElementById('trResult').innerHTML=
     '<span class="w-bad">이 브라우저는 음성인식을 지원하지 않아요. 크롬을 사용하세요.</span>';return}
+  trRecognizing=true;
+  document.getElementById('trBtnRec').textContent='🎙️ 준비 중...';
+  document.getElementById('trResult').innerHTML='<span class="meta">🎤 마이크 준비 중...</span>';
+  await getMic();   // 마이크 미리 켜서 첫 음절 잘림 방지
   const rec=new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
-  trRecognizing=true; document.getElementById('trBtnRec').textContent='🎙️ 듣는 중...';
-  document.getElementById('trResult').textContent='영어로 말해보세요...';
+  rec.onstart=()=>{ beep();
+    document.getElementById('trBtnRec').textContent='🎙️ 듣는 중...';
+    document.getElementById('trResult').innerHTML=
+      '<span style="color:var(--good);font-weight:700;font-size:18px">🎙️ 지금 말하세요!</span>';};
   rec.onresult=e=>{
     const said=e.results[0][0].transcript;
     const {score,marks}=compare(trCurrent.eng,said);
@@ -6693,7 +6728,13 @@ function download(name,content){
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();
 }
 
-renderLearn(); refreshStats();
+// 이어서 학습: 저장된 위치 복원 (자동재생은 첫 진입 시 끔 — 새로고침 직후 소리 방지)
+const savedIdx=parseInt(lsGet('et_learnidx')||'0',10);
+if(!isNaN(savedIdx)) learnIdx=savedIdx;
+document.getElementById('autoplay').checked=false;
+renderLearn();
+document.getElementById('autoplay').checked=true;
+refreshStats();
 </script>
 </body>
 </html>
