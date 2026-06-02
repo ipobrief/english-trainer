@@ -14,76 +14,170 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+      - name: Create TWA Android project
+        run: |
+          mkdir -p twa/app/src/main/res/values
+          mkdir -p twa/app/src/main/res/xml
+          mkdir -p twa/gradle/wrapper
 
-      - name: Install Bubblewrap
-        run: npm install -g @bubblewrap/cli
+          # settings.gradle
+          cat > twa/settings.gradle << 'EOF'
+          include ':app'
+          EOF
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+          # root build.gradle
+          cat > twa/build.gradle << 'EOF'
+          buildscript {
+              repositories { google(); mavenCentral() }
+              dependencies {
+                  classpath 'com.android.tools.build:gradle:8.2.2'
+              }
+          }
+          allprojects {
+              repositories { google(); mavenCentral() }
+          }
+          EOF
+
+          # app/build.gradle
+          cat > twa/app/build.gradle << 'EOF'
+          plugins { id 'com.android.application' }
+          android {
+              namespace 'io.github.ipobrief.englishtrainer'
+              compileSdk 34
+              defaultConfig {
+                  applicationId 'io.github.ipobrief.englishtrainer'
+                  minSdk 19
+                  targetSdk 34
+                  versionCode 1
+                  versionName '1.0.0'
+              }
+              signingConfigs {
+                  release {
+                      storeFile file('../android.keystore')
+                      storePassword 'english123'
+                      keyAlias 'android'
+                      keyPassword 'english123'
+                  }
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.release
+                      minifyEnabled false
+                  }
+              }
+          }
+          dependencies {
+              implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+          }
+          EOF
+
+          # AndroidManifest.xml
+          cat > twa/app/src/main/AndroidManifest.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET"/>
+              <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+              <application
+                  android:label="@string/appName"
+                  android:theme="@android:style/Theme.NoTitleBar">
+                  <activity
+                      android:name="com.google.androidbrowserhelper.trusted.LauncherActivity"
+                      android:exported="true">
+                      <meta-data
+                          android:name="android.support.customtabs.trusted.DEFAULT_URL"
+                          android:value="https://ipobrief.github.io/english-trainer/"/>
+                      <meta-data
+                          android:name="android.support.customtabs.trusted.STATUS_BAR_COLOR"
+                          android:value="@color/colorPrimary"/>
+                      <meta-data
+                          android:name="android.support.customtabs.trusted.NAVIGATION_BAR_COLOR"
+                          android:value="@color/colorPrimary"/>
+                      <meta-data
+                          android:name="android.support.customtabs.trusted.SPLASH_IMAGE_DRAWABLE"
+                          android:value="@color/colorPrimary"/>
+                      <meta-data
+                          android:name="android.support.customtabs.trusted.SPLASH_SCREEN_BACKGROUND_COLOR"
+                          android:value="@color/colorPrimary"/>
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+                      <intent-filter android:autoVerify="true">
+                          <action android:name="android.intent.action.VIEW"/>
+                          <category android:name="android.intent.category.DEFAULT"/>
+                          <category android:name="android.intent.category.BROWSABLE"/>
+                          <data android:scheme="https"
+                                android:host="ipobrief.github.io"
+                                android:pathPrefix="/english-trainer"/>
+                      </intent-filter>
+                  </activity>
+                  <service
+                      android:name="com.google.androidbrowserhelper.trusted.DelegationService"
+                      android:exported="true"
+                      android:enabled="true">
+                      <intent-filter>
+                          <action android:name="android.support.customtabs.trusted.TRUSTED_WEB_ACTIVITY_SERVICE"/>
+                          <category android:name="android.intent.category.DEFAULT"/>
+                      </intent-filter>
+                  </service>
+              </application>
+          </manifest>
+          EOF
+
+          # strings.xml
+          cat > twa/app/src/main/res/values/strings.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <string name="appName">영어 트레이너</string>
+          </resources>
+          EOF
+
+          # colors.xml
+          cat > twa/app/src/main/res/values/colors.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <color name="colorPrimary">#0f1226</color>
+          </resources>
+          EOF
+
+          # gradle wrapper
+          cat > twa/gradle/wrapper/gradle-wrapper.properties << 'EOF'
+          distributionBase=GRADLE_USER_HOME
+          distributionPath=wrapper/dists
+          distributionUrl=https\://services.gradle.org/distributions/gradle-8.4-bin.zip
+          zipStoreBase=GRADLE_USER_HOME
+          zipStorePath=wrapper/dists
+          EOF
+
+          cd twa
+          gradle wrapper --gradle-version 8.4
 
       - name: Generate signing keystore
         run: |
           keytool -genkey -v \
-            -keystore android.keystore \
+            -keystore twa/android.keystore \
             -alias android \
             -keyalg RSA -keysize 2048 \
             -validity 10000 \
             -storepass english123 \
             -keypass english123 \
-            -dname "CN=영어트레이너, OU=English, O=ipobrief, L=Seoul, ST=Seoul, C=KR"
-
-      - name: Init TWA from manifest
-        run: |
-          bubblewrap init --manifest https://ipobrief.github.io/english-trainer/manifest.json
-        env:
-          BUBBLEWRAP_SKIP_UPDATE: "true"
-          CI: "true"
-
-      - name: Copy keystore & patch signing config
-        run: |
-          cp android.keystore twa/android.keystore
-          cd twa
-          # twa-manifest.json 에 서명 정보 주입
-          node -e "
-            const fs = require('fs');
-            const m = JSON.parse(fs.readFileSync('twa-manifest.json','utf8'));
-            m.signingKey = { path: './android.keystore', alias: 'android' };
-            fs.writeFileSync('twa-manifest.json', JSON.stringify(m, null, 2));
-          "
+            -dname "CN=EnglishTrainer,O=ipobrief,C=KR"
 
       - name: Build AAB
         run: |
           cd twa
-          bubblewrap build \
-            --skipPwaValidation \
-            --signingKeyPath ./android.keystore \
-            --signingKeyAlias android \
-            --ks-pass pass:english123 \
-            --key-pass pass:english123
-        env:
-          BUBBLEWRAP_SKIP_UPDATE: "true"
+          chmod +x gradlew
+          ./gradlew bundleRelease
 
       - name: Generate assetlinks.json
         run: |
-          FINGERPRINT=$(keytool -list -v \
-            -keystore android.keystore \
+          FP=$(keytool -list -v \
+            -keystore twa/android.keystore \
             -alias android \
             -storepass english123 2>/dev/null \
-            | grep "SHA256:" | head -1 | awk '{print $2}')
-          echo "SHA256 Fingerprint: $FINGERPRINT"
-          cat > assetlinks.json << EOF
-          [{
-            "relation": ["delegate_permission/common.handle_all_urls"],
-            "target": {
-              "namespace": "android_app",
-              "package_name": "io.github.ipobrief.englishtrainer",
-              "sha256_cert_fingerprints": ["$FINGERPRINT"]
-            }
-          }]
-          EOF
+            | grep "SHA256:" | sed 's/.*SHA256: //')
+          echo "Fingerprint: $FP"
+          printf '[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"io.github.ipobrief.englishtrainer","sha256_cert_fingerprints":["%s"]}}]' "$FP" > assetlinks.json
           cat assetlinks.json
 
       - name: Upload artifacts
@@ -91,7 +185,7 @@ jobs:
         with:
           name: english-trainer-release
           path: |
-            twa/app-release-bundle.aab
-            android.keystore
+            twa/app/build/outputs/bundle/release/app-release.aab
+            twa/android.keystore
             assetlinks.json
           retention-days: 30
