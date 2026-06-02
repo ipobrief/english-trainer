@@ -2,232 +2,15 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>생활영어 암기 트레이너</title>
-<style>
-  :root{
-    --bg:#0f1226; --card:#1a1f3d; --card2:#232a52; --txt:#eef1ff;
-    --muted:#9aa3d0; --accent:#5b8cff; --good:#36d399; --bad:#ff6b81;
-    --warn:#ffd166; --line:#2c3463;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,"Malgun Gothic",sans-serif;
-    background:linear-gradient(160deg,#0f1226,#141a38);color:var(--txt);min-height:100vh}
-  header{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;
-    align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
-  h1{font-size:19px;margin:0}
-  .wrap{max-width:780px;margin:0 auto;padding:18px 16px 60px}
-  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
-  .tab{background:var(--card);border:1px solid var(--line);color:var(--muted);
-    padding:8px 14px;border-radius:999px;cursor:pointer;font-size:14px}
-  .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;
-    padding:22px;margin-bottom:16px}
-  .eng{font-size:26px;font-weight:700;line-height:1.35;margin:0 0 8px}
-  .kor{font-size:16px;color:var(--muted);margin:0 0 4px}
-  .meta{font-size:12px;color:var(--muted);margin-top:10px}
-  .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
-  button{font-family:inherit;font-size:15px;border:none;border-radius:12px;
-    padding:11px 16px;cursor:pointer;background:var(--card2);color:var(--txt);
-    border:1px solid var(--line)}
-  button:hover{filter:brightness(1.15)}
-  button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
-  button.good{background:var(--good);color:#06281c;border:none}
-  button.bad{background:var(--bad);color:#3a0410;border:none}
-  button:disabled{opacity:.45;cursor:not-allowed}
-  .pill{display:inline-block;background:var(--card2);border:1px solid var(--line);
-    border-radius:999px;padding:3px 10px;font-size:12px;color:var(--muted);margin-right:6px}
-  .result{margin-top:14px;font-size:17px;line-height:1.5;min-height:24px}
-  .w-ok{color:var(--good)} .w-bad{color:var(--bad);text-decoration:underline}
-  .score{font-size:40px;font-weight:800;margin:6px 0}
-  .bar{height:10px;background:var(--card2);border-radius:999px;overflow:hidden;margin-top:6px}
-  .bar>div{height:100%;background:var(--accent)}
-  .stat{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px}
-  .stat .box{background:var(--card2);border-radius:14px;padding:14px;text-align:center}
-  .stat .num{font-size:28px;font-weight:800}
-  .stat .lbl{font-size:12px;color:var(--muted);margin-top:4px}
-  label{font-size:13px;color:var(--muted)}
-  select,input[type=range],textarea,input[type=text]{font-family:inherit}
-  select{background:var(--card2);color:var(--txt);border:1px solid var(--line);
-    border-radius:10px;padding:8px 10px}
-  textarea{width:100%;background:var(--card2);color:var(--txt);border:1px solid var(--line);
-    border-radius:10px;padding:10px;min-height:90px;font-size:14px}
-  .list-item{background:var(--card);border:1px solid var(--line);border-radius:12px;
-    padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;
-    align-items:center;gap:10px}
-  .list-item .e{font-weight:600}
-  .list-item .k{font-size:13px;color:var(--muted)}
-  .cat-header{margin:22px 0 10px;padding:8px 14px;font-size:15px;font-weight:700;
-    color:var(--accent);background:var(--card2);border-left:4px solid var(--accent);
-    border-radius:8px}
-  .cat-header span{color:var(--muted);font-weight:400;font-size:13px}
-  .cat-header:first-child{margin-top:0}
-  .box-badge{font-size:11px;padding:2px 8px;border-radius:999px;white-space:nowrap}
-  .controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px}
-  .hint{font-size:12px;color:var(--muted);margin-top:8px}
-  .wordchips{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
-  .wchip{background:var(--card2);border:1px solid var(--line);border-radius:9px;
-    padding:5px 11px;font-size:15px;cursor:pointer}
-  .wchip:hover{border-color:var(--accent)}
-  .wchip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-  .wordinfo{margin-top:12px;font-size:14px;line-height:1.6}
-  .wordinfo .ipa{color:var(--warn);font-size:15px}
-  .wordinfo .pos{color:var(--accent);font-weight:600}
-  .wordinfo .def{color:var(--txt)}
-  .wordinfo .ex{color:var(--muted);font-style:italic}
-  a{color:var(--accent)}
-</style>
-</head>
-<body>
-<header>
-  <h1>🗣️ 생활영어 암기 트레이너</h1>
-  <div class="controls">
-    <label>음성 <select id="voiceSel" style="max-width:200px"></select></label>
-    <label>속도 <input type="range" id="rate" min="0.6" max="1.1" step="0.05" value="0.9"></label>
-    <label><input type="checkbox" id="autoplay" checked> 자동 재생</label>
-    <label><input type="checkbox" id="autoflow" checked> 이어서 말하기</label>
-    <label>마이크 <select id="micMode">
-      <option value="score">🎤 점수 채점</option>
-      <option value="record">🎧 내 발음 녹음</option>
-    </select></label>
-  </div>
-</header>
-<div class="wrap">
-  <div class="tabs">
-    <div class="tab active" data-tab="learn">학습</div>
-    <div class="tab" data-tab="train">훈련</div>
-    <div class="tab" data-tab="review">틀린 문장 복습</div>
-    <div class="tab" data-tab="stats">진도</div>
-    <div class="tab" data-tab="manage">문장 관리</div>
-    <div class="tab" data-tab="alarm">알람</div>
-  </div>
-
-  <!-- LEARN -->
-  <section id="learn">
-    <div class="card" id="cardLearn">
-      <div id="catpill"></div>
-      <p class="eng" id="eng">로딩 중...</p>
-      <p class="kor" id="kor"></p>
-      <div class="meta" id="meta"></div>
-
-      <div id="wordChips" class="wordchips"></div>
-      <div id="wordInfo" class="wordinfo"></div>
-
-      <div class="row">
-        <button class="primary" id="btnPlay">🔊 발음 듣기</button>
-        <button id="btnSlow">🐢 천천히</button>
-        <button id="btnRec">🎤 따라 말하기</button>
-        <button id="btnShowKor">👁️ 뜻 보기</button>
-      </div>
-
-      <div class="result" id="recResult"></div>
-
-      <div class="row">
-        <button id="btnPrev">⬅️ 이전</button>
-        <button class="primary" id="btnNext">다음 문장 ➡️</button>
-      </div>
-    </div>
-    <p class="hint">팁: 문장이 자동으로 입에서 나올 때까지 🔊듣고 → 🎤따라 말하기를 반복하세요.
-    충분히 외웠다면 <b>훈련 탭</b>에서 한글만 보고 영어로 말해 테스트하세요.</p>
-  </section>
-
-  <!-- TRAIN -->
-  <section id="train" style="display:none">
-    <div class="card">
-      <div id="trCatpill"></div>
-      <p class="meta" style="margin-bottom:4px">아래 뜻을 영어로 말해보세요 👇</p>
-      <p class="eng" id="trKor">로딩 중...</p>
-      <div class="row">
-        <button class="primary" id="trBtnRec">🎤 영어로 말하기</button>
-        <button id="trBtnReveal">👁️ 정답 보기</button>
-        <button id="trBtnSkip">건너뛰기</button>
-      </div>
-      <div class="result" id="trResult"></div>
-      <div class="row" id="trManualRow" style="display:none">
-        <button class="good" id="trPass">✅ 맞았어요</button>
-        <button class="bad" id="trFail">🔁 다시 (반복)</button>
-      </div>
-    </div>
-    <p class="hint">한글 뜻을 보고 영어로 말하면 음성인식이 채점합니다.
-    <b>80점 이상이면 자동 통과</b>(박스↑), 그 미만이면 반복 대상이 됩니다.
-    마이크 없이 연습하려면 👁️정답 보기 후 직접 채점하세요.</p>
-  </section>
-
-  <!-- REVIEW -->
-  <section id="review" style="display:none">
-    <div class="card">
-      <h2 style="margin-top:0">틀린 문장 / 복습 대기</h2>
-      <div id="reviewList"></div>
-    </div>
-  </section>
-
-  <!-- STATS -->
-  <section id="stats" style="display:none">
-    <div class="card">
-      <h2 style="margin-top:0">진도</h2>
-      <div class="stat" id="statGrid"></div>
-      <div class="meta" style="margin-top:16px">라이트너 박스: 1=새 문장/틀림 → 5=완전 암기. 박스가 높을수록 오랜만에 다시 나옵니다.</div>
-      <div id="boxBars" style="margin-top:14px"></div>
-      <div class="row" style="margin-top:18px">
-        <button id="btnExportProgress">진도 백업(내보내기)</button>
-        <button class="bad" id="btnReset">진도 초기화</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- MANAGE -->
-  <section id="manage" style="display:none">
-    <div class="card">
-      <h2 style="margin-top:0">문장 추가/관리</h2>
-      <p class="hint">한 줄에 하나씩, <code>영어 문장 | 한국어 뜻 | 카테고리</code> 형식으로 입력 후 추가하세요.
-      (카테고리 생략 가능)</p>
-      <textarea id="addBox" placeholder="See you tomorrow. | 내일 봐요. | 인사
-Can I get a refund? | 환불 받을 수 있나요? | 쇼핑"></textarea>
-      <div class="row">
-        <button class="primary" id="btnAdd">➕ 문장 추가</button>
-        <button id="btnExportAll">전체 문장 내보내기(.json)</button>
-        <label class="pill" style="cursor:pointer">📂 불러오기<input type="file" id="importFile" accept=".json" hidden></label>
-      </div>
-      <div class="meta" id="manageCount" style="margin-top:12px"></div>
-    </div>
-    <div class="card">
-      <h3 style="margin-top:0">전체 문장 목록</h3>
-      <div id="allList"></div>
-    </div>
-  </section>
-
-  <!-- ALARM -->
-  <section id="alarm" style="display:none">
-    <div class="card">
-      <h2 style="margin-top:0">🔔 매일 학습 알람</h2>
-      <p class="meta">매일 알림 받을 시간을 정하세요.</p>
-      <div class="row" style="align-items:center">
-        <input type="time" id="alarmTime" value="21:00"
-          style="font-size:20px;padding:8px 12px;background:var(--card2);
-          color:var(--txt);border:1px solid var(--line);border-radius:10px">
-      </div>
-
-      <h3>① 캘린더 알람 (앱을 꺼도 알림 받기 · 추천)</h3>
-      <p class="hint">버튼을 누르면 "매일 반복" 알람 파일이 다운로드돼요.
-      파일을 열어 폰 캘린더에 추가하면, 매일 그 시간에 폰이 알려줍니다.</p>
-      <div class="row">
-        <button class="primary" id="btnIcs">📅 매일 알람 캘린더에 추가</button>
-      </div>
-
-      <h3 style="margin-top:24px">② 앱 내 알림 (앱이 열려 있을 때)</h3>
-      <p class="hint">알림을 허용하면, 앱을 켜둔 상태에서 정한 시간에 알림이 떠요.</p>
-      <div class="row">
-        <button id="btnNotifPerm">🔔 알림 권한 허용</button>
-      </div>
-      <div class="meta" id="alarmStatus" style="margin-top:12px"></div>
-    </div>
-    <div class="card">
-      <h3 style="margin-top:0">오늘의 학습</h3>
-      <div id="todayStatus" class="meta"></div>
-    </div>
-  </section>
-</div>
-
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f1226">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="영어 트레이너">
+<link rel="apple-touch-icon" href="icon-192.png">
 <script>window.EMBEDDED_SENTENCES=[
  {
   "id": "p0",
@@ -6242,6 +6025,235 @@ Can I get a refund? | 환불 받을 수 있나요? | 쇼핑"></textarea>
   "cat": "기타표현"
  }
 ];</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+</script>
+<style>
+  :root{
+    --bg:#0f1226; --card:#1a1f3d; --card2:#232a52; --txt:#eef1ff;
+    --muted:#9aa3d0; --accent:#5b8cff; --good:#36d399; --bad:#ff6b81;
+    --warn:#ffd166; --line:#2c3463;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,"Malgun Gothic",sans-serif;
+    background:linear-gradient(160deg,#0f1226,#141a38);color:var(--txt);min-height:100vh}
+  header{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;
+    align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+  h1{font-size:19px;margin:0}
+  .wrap{max-width:780px;margin:0 auto;padding:18px 16px 60px}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+  .tab{background:var(--card);border:1px solid var(--line);color:var(--muted);
+    padding:8px 14px;border-radius:999px;cursor:pointer;font-size:14px}
+  .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;
+    padding:22px;margin-bottom:16px}
+  .eng{font-size:26px;font-weight:700;line-height:1.35;margin:0 0 8px}
+  .kor{font-size:16px;color:var(--muted);margin:0 0 4px}
+  .meta{font-size:12px;color:var(--muted);margin-top:10px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+  button{font-family:inherit;font-size:15px;border:none;border-radius:12px;
+    padding:11px 16px;cursor:pointer;background:var(--card2);color:var(--txt);
+    border:1px solid var(--line)}
+  button:hover{filter:brightness(1.15)}
+  button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  button.good{background:var(--good);color:#06281c;border:none}
+  button.bad{background:var(--bad);color:#3a0410;border:none}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .pill{display:inline-block;background:var(--card2);border:1px solid var(--line);
+    border-radius:999px;padding:3px 10px;font-size:12px;color:var(--muted);margin-right:6px}
+  .result{margin-top:14px;font-size:17px;line-height:1.5;min-height:24px}
+  .w-ok{color:var(--good)} .w-bad{color:var(--bad);text-decoration:underline}
+  .score{font-size:40px;font-weight:800;margin:6px 0}
+  .bar{height:10px;background:var(--card2);border-radius:999px;overflow:hidden;margin-top:6px}
+  .bar>div{height:100%;background:var(--accent)}
+  .stat{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px}
+  .stat .box{background:var(--card2);border-radius:14px;padding:14px;text-align:center}
+  .stat .num{font-size:28px;font-weight:800}
+  .stat .lbl{font-size:12px;color:var(--muted);margin-top:4px}
+  label{font-size:13px;color:var(--muted)}
+  select,input[type=range],textarea,input[type=text]{font-family:inherit}
+  select{background:var(--card2);color:var(--txt);border:1px solid var(--line);
+    border-radius:10px;padding:8px 10px}
+  textarea{width:100%;background:var(--card2);color:var(--txt);border:1px solid var(--line);
+    border-radius:10px;padding:10px;min-height:90px;font-size:14px}
+  .list-item{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;
+    align-items:center;gap:10px}
+  .list-item .e{font-weight:600}
+  .list-item .k{font-size:13px;color:var(--muted)}
+  .cat-header{margin:22px 0 10px;padding:8px 14px;font-size:15px;font-weight:700;
+    color:var(--accent);background:var(--card2);border-left:4px solid var(--accent);
+    border-radius:8px}
+  .cat-header span{color:var(--muted);font-weight:400;font-size:13px}
+  .cat-header:first-child{margin-top:0}
+  .box-badge{font-size:11px;padding:2px 8px;border-radius:999px;white-space:nowrap}
+  .controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px}
+  .hint{font-size:12px;color:var(--muted);margin-top:8px}
+  .wordchips{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+  .wchip{background:var(--card2);border:1px solid var(--line);border-radius:9px;
+    padding:5px 11px;font-size:15px;cursor:pointer}
+  .wchip:hover{border-color:var(--accent)}
+  .wchip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .wordinfo{margin-top:12px;font-size:14px;line-height:1.6}
+  .wordinfo .ipa{color:var(--warn);font-size:15px}
+  .wordinfo .pos{color:var(--accent);font-weight:600}
+  .wordinfo .def{color:var(--txt)}
+  .wordinfo .ex{color:var(--muted);font-style:italic}
+  a{color:var(--accent)}
+</style>
+</head>
+<body>
+<header>
+  <h1>🗣️ 생활영어 암기 트레이너</h1>
+  <div class="controls">
+    <label>음성 <select id="voiceSel" style="max-width:200px"></select></label>
+    <label>속도 <input type="range" id="rate" min="0.6" max="1.1" step="0.05" value="0.9"></label>
+    <label><input type="checkbox" id="autoplay" checked> 자동 재생</label>
+    <label><input type="checkbox" id="autoflow" checked> 이어서 말하기</label>
+    <label>마이크 <select id="micMode">
+      <option value="score">🎤 점수 채점</option>
+      <option value="record">🎧 내 발음 녹음</option>
+    </select></label>
+  </div>
+</header>
+<div class="wrap">
+  <div class="tabs">
+    <div class="tab active" data-tab="learn">학습</div>
+    <div class="tab" data-tab="train">훈련</div>
+    <div class="tab" data-tab="review">틀린 문장 복습</div>
+    <div class="tab" data-tab="stats">진도</div>
+    <div class="tab" data-tab="manage">문장 관리</div>
+    <div class="tab" data-tab="alarm">알람</div>
+  </div>
+
+  <!-- LEARN -->
+  <section id="learn">
+    <div class="card" id="cardLearn">
+      <div id="catpill"></div>
+      <p class="eng" id="eng">로딩 중...</p>
+      <p class="kor" id="kor"></p>
+      <div class="meta" id="meta"></div>
+
+      <div id="wordChips" class="wordchips"></div>
+      <div id="wordInfo" class="wordinfo"></div>
+
+      <div class="row">
+        <button class="primary" id="btnPlay">🔊 발음 듣기</button>
+        <button id="btnSlow">🐢 천천히</button>
+        <button id="btnRec">🎤 따라 말하기</button>
+        <button id="btnShowKor">👁️ 뜻 보기</button>
+      </div>
+
+      <div class="result" id="recResult"></div>
+
+      <div class="row">
+        <button id="btnPrev">⬅️ 이전</button>
+        <button class="primary" id="btnNext">다음 문장 ➡️</button>
+      </div>
+    </div>
+    <p class="hint">팁: 문장이 자동으로 입에서 나올 때까지 🔊듣고 → 🎤따라 말하기를 반복하세요.
+    충분히 외웠다면 <b>훈련 탭</b>에서 한글만 보고 영어로 말해 테스트하세요.</p>
+  </section>
+
+  <!-- TRAIN -->
+  <section id="train" style="display:none">
+    <div class="card">
+      <div id="trCatpill"></div>
+      <p class="meta" style="margin-bottom:4px">아래 뜻을 영어로 말해보세요 👇</p>
+      <p class="eng" id="trKor">로딩 중...</p>
+      <div class="row">
+        <button class="primary" id="trBtnRec">🎤 영어로 말하기</button>
+        <button id="trBtnReveal">👁️ 정답 보기</button>
+        <button id="trBtnSkip">건너뛰기</button>
+      </div>
+      <div class="result" id="trResult"></div>
+      <div class="row" id="trManualRow" style="display:none">
+        <button class="good" id="trPass">✅ 맞았어요</button>
+        <button class="bad" id="trFail">🔁 다시 (반복)</button>
+      </div>
+    </div>
+    <p class="hint">한글 뜻을 보고 영어로 말하면 음성인식이 채점합니다.
+    <b>80점 이상이면 자동 통과</b>(박스↑), 그 미만이면 반복 대상이 됩니다.
+    마이크 없이 연습하려면 👁️정답 보기 후 직접 채점하세요.</p>
+  </section>
+
+  <!-- REVIEW -->
+  <section id="review" style="display:none">
+    <div class="card">
+      <h2 style="margin-top:0">틀린 문장 / 복습 대기</h2>
+      <div id="reviewList"></div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section id="stats" style="display:none">
+    <div class="card">
+      <h2 style="margin-top:0">진도</h2>
+      <div class="stat" id="statGrid"></div>
+      <div class="meta" style="margin-top:16px">라이트너 박스: 1=새 문장/틀림 → 5=완전 암기. 박스가 높을수록 오랜만에 다시 나옵니다.</div>
+      <div id="boxBars" style="margin-top:14px"></div>
+      <div class="row" style="margin-top:18px">
+        <button id="btnExportProgress">진도 백업(내보내기)</button>
+        <button class="bad" id="btnReset">진도 초기화</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- MANAGE -->
+  <section id="manage" style="display:none">
+    <div class="card">
+      <h2 style="margin-top:0">문장 추가/관리</h2>
+      <p class="hint">한 줄에 하나씩, <code>영어 문장 | 한국어 뜻 | 카테고리</code> 형식으로 입력 후 추가하세요.
+      (카테고리 생략 가능)</p>
+      <textarea id="addBox" placeholder="See you tomorrow. | 내일 봐요. | 인사
+Can I get a refund? | 환불 받을 수 있나요? | 쇼핑"></textarea>
+      <div class="row">
+        <button class="primary" id="btnAdd">➕ 문장 추가</button>
+        <button id="btnExportAll">전체 문장 내보내기(.json)</button>
+        <label class="pill" style="cursor:pointer">📂 불러오기<input type="file" id="importFile" accept=".json" hidden></label>
+      </div>
+      <div class="meta" id="manageCount" style="margin-top:12px"></div>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">전체 문장 목록</h3>
+      <div id="allList"></div>
+    </div>
+  </section>
+
+  <!-- ALARM -->
+  <section id="alarm" style="display:none">
+    <div class="card">
+      <h2 style="margin-top:0">🔔 매일 학습 알람</h2>
+      <p class="meta">매일 알림 받을 시간을 정하세요.</p>
+      <div class="row" style="align-items:center">
+        <input type="time" id="alarmTime" value="21:00"
+          style="font-size:20px;padding:8px 12px;background:var(--card2);
+          color:var(--txt);border:1px solid var(--line);border-radius:10px">
+      </div>
+
+      <h3>① 캘린더 알람 (앱을 꺼도 알림 받기 · 추천)</h3>
+      <p class="hint">버튼을 누르면 "매일 반복" 알람 파일이 다운로드돼요.
+      파일을 열어 폰 캘린더에 추가하면, 매일 그 시간에 폰이 알려줍니다.</p>
+      <div class="row">
+        <button class="primary" id="btnIcs">📅 매일 알람 캘린더에 추가</button>
+      </div>
+
+      <h3 style="margin-top:24px">② 앱 내 알림 (앱이 열려 있을 때)</h3>
+      <p class="hint">알림을 허용하면, 앱을 켜둔 상태에서 정한 시간에 알림이 떠요.</p>
+      <div class="row">
+        <button id="btnNotifPerm">🔔 알림 권한 허용</button>
+      </div>
+      <div class="meta" id="alarmStatus" style="margin-top:12px"></div>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">오늘의 학습</h3>
+      <div id="todayStatus" class="meta"></div>
+    </div>
+  </section>
+</div>
+
 <script>
 /* ---------- 기본 생활영어 문장 세트 ---------- */
 const SEED = [
