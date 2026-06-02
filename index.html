@@ -6507,6 +6507,8 @@ function renderLearn(){
   document.getElementById('meta').textContent='';
   document.getElementById('recResult').innerHTML='';
   renderWordChips(current.eng);
+  prog(current.id).studied=true;            // 학습 탭에서 본 문장 → 훈련 대상에 포함
+  saveProgress(progress);
   lsSet('et_learnidx', String(learnIdx));   // 마지막 위치 저장(이어서 학습)
   const auto=document.getElementById('autoplay').checked;
   const flow=document.getElementById('autoflow').checked;
@@ -6574,11 +6576,13 @@ function gradeItem(item,pass){
 
 /* ---------- 훈련 탭: 한글 보고 영어로 말하기 ---------- */
 let trCurrent=null, trRecognizing=false;
-// 훈련은 랜덤 출제: 복습 시간이 된 문장 중 무작위, 없으면 전체에서 무작위
+// 훈련은 '학습 탭에서 본 문장'만 랜덤 출제 (복습 시간 된 것 우선)
 function pickRandom(){
+  const studied=sentences.filter(s=>prog(s.id).studied);
+  if(studied.length===0) return null;       // 아직 학습한 문장이 없음
   const now=Date.now()/1000;
-  let pool=sentences.filter(s=>prog(s.id).due<=now);
-  if(pool.length===0) pool=sentences;
+  let pool=studied.filter(s=>prog(s.id).due<=now);
+  if(pool.length===0) pool=studied;
   let s=pool[Math.floor(Math.random()*pool.length)];
   if(pool.length>1 && trCurrent && s.id===trCurrent.id)  // 같은 문장 연속 방지
     s=pool[(pool.indexOf(s)+1)%pool.length];
@@ -6586,6 +6590,14 @@ function pickRandom(){
 }
 function renderTrain(){
   trCurrent=pickRandom();
+  if(!trCurrent){
+    document.getElementById('trCatpill').innerHTML='';
+    document.getElementById('trKor').textContent='먼저 학습 탭에서 문장을 학습해 주세요.';
+    document.getElementById('trResult').innerHTML=
+      '<span class="meta">학습 탭에서 본 문장만 훈련에 나옵니다.</span>';
+    document.getElementById('trManualRow').style.display='none';
+    return;
+  }
   const p=prog(trCurrent.id);
   document.getElementById('trCatpill').innerHTML=
     `<span class="pill">${trCurrent.cat}</span><span class="pill">박스 ${p.box}/5</span>`+
@@ -6595,6 +6607,7 @@ function renderTrain(){
   document.getElementById('trManualRow').style.display='none';
 }
 async function trStartRec(){
+  if(!trCurrent) return;
   if(!SR){document.getElementById('trResult').innerHTML=
     '<span class="w-bad">이 브라우저는 음성인식을 지원하지 않아요. 크롬을 사용하세요.</span>';return}
   trRecognizing=true;
@@ -6703,6 +6716,7 @@ document.getElementById('btnNext').onclick=()=>{learnIdx++;renderLearn();};
 document.getElementById('btnPrev').onclick=()=>{learnIdx--;renderLearn();};
 document.getElementById('trBtnRec').onclick=()=>{if(!trRecognizing)trStartRec()};
 document.getElementById('trBtnReveal').onclick=()=>{
+  if(!trCurrent) return;
   document.getElementById('trResult').innerHTML=
     `<div style="font-size:22px;font-weight:700">${trCurrent.eng}</div>`;
   speak(trCurrent.eng);
