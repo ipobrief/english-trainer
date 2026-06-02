@@ -14,39 +14,33 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Create TWA Android project
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Create TWA project files
         run: |
           mkdir -p twa/app/src/main/res/values
-          mkdir -p twa/app/src/main/res/xml
-          mkdir -p twa/gradle/wrapper
 
-          # settings.gradle
-          cat > twa/settings.gradle << 'EOF'
+          cat > twa/settings.gradle << 'GRADLE'
           include ':app'
-          EOF
+          GRADLE
 
-          # root build.gradle
-          cat > twa/build.gradle << 'EOF'
+          cat > twa/build.gradle << 'GRADLE'
           buildscript {
               repositories { google(); mavenCentral() }
-              dependencies {
-                  classpath 'com.android.tools.build:gradle:8.2.2'
-              }
+              dependencies { classpath 'com.android.tools.build:gradle:8.2.2' }
           }
-          allprojects {
-              repositories { google(); mavenCentral() }
-          }
-          EOF
+          allprojects { repositories { google(); mavenCentral() } }
+          GRADLE
 
-          # app/build.gradle
-          cat > twa/app/build.gradle << 'EOF'
+          cat > twa/app/build.gradle << 'GRADLE'
           plugins { id 'com.android.application' }
           android {
               namespace 'io.github.ipobrief.englishtrainer'
               compileSdk 34
               defaultConfig {
                   applicationId 'io.github.ipobrief.englishtrainer'
-                  minSdk 19
+                  minSdk 21
                   targetSdk 34
                   versionCode 1
                   versionName '1.0.0'
@@ -65,38 +59,33 @@ jobs:
                       minifyEnabled false
                   }
               }
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_1_8
+                  targetCompatibility JavaVersion.VERSION_1_8
+              }
           }
           dependencies {
               implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
           }
-          EOF
+          GRADLE
 
-          # AndroidManifest.xml
-          cat > twa/app/src/main/AndroidManifest.xml << 'EOF'
+          cat > twa/app/src/main/AndroidManifest.xml << 'XML'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.RECORD_AUDIO"/>
               <application
-                  android:label="@string/appName"
+                  android:label="영어 트레이너"
+                  android:icon="@mipmap/ic_launcher"
                   android:theme="@android:style/Theme.NoTitleBar">
                   <activity
                       android:name="com.google.androidbrowserhelper.trusted.LauncherActivity"
                       android:exported="true">
-                      <meta-data
-                          android:name="android.support.customtabs.trusted.DEFAULT_URL"
+                      <meta-data android:name="android.support.customtabs.trusted.DEFAULT_URL"
                           android:value="https://ipobrief.github.io/english-trainer/"/>
-                      <meta-data
-                          android:name="android.support.customtabs.trusted.STATUS_BAR_COLOR"
+                      <meta-data android:name="android.support.customtabs.trusted.STATUS_BAR_COLOR"
                           android:value="@color/colorPrimary"/>
-                      <meta-data
-                          android:name="android.support.customtabs.trusted.NAVIGATION_BAR_COLOR"
-                          android:value="@color/colorPrimary"/>
-                      <meta-data
-                          android:name="android.support.customtabs.trusted.SPLASH_IMAGE_DRAWABLE"
-                          android:value="@color/colorPrimary"/>
-                      <meta-data
-                          android:name="android.support.customtabs.trusted.SPLASH_SCREEN_BACKGROUND_COLOR"
+                      <meta-data android:name="android.support.customtabs.trusted.NAVIGATION_BAR_COLOR"
                           android:value="@color/colorPrimary"/>
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN"/>
@@ -111,10 +100,8 @@ jobs:
                                 android:pathPrefix="/english-trainer"/>
                       </intent-filter>
                   </activity>
-                  <service
-                      android:name="com.google.androidbrowserhelper.trusted.DelegationService"
-                      android:exported="true"
-                      android:enabled="true">
+                  <service android:name="com.google.androidbrowserhelper.trusted.DelegationService"
+                      android:exported="true" android:enabled="true">
                       <intent-filter>
                           <action android:name="android.support.customtabs.trusted.TRUSTED_WEB_ACTIVITY_SERVICE"/>
                           <category android:name="android.intent.category.DEFAULT"/>
@@ -122,26 +109,26 @@ jobs:
                   </service>
               </application>
           </manifest>
-          EOF
+          XML
 
-          # strings.xml
-          cat > twa/app/src/main/res/values/strings.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <string name="appName">영어 트레이너</string>
-          </resources>
-          EOF
-
-          # colors.xml
-          cat > twa/app/src/main/res/values/colors.xml << 'EOF'
+          cat > twa/app/src/main/res/values/colors.xml << 'XML'
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
               <color name="colorPrimary">#0f1226</color>
           </resources>
-          EOF
+          XML
 
-          # gradle wrapper
-          cat > twa/gradle/wrapper/gradle-wrapper.properties << 'EOF'
+      - name: Add Gradle wrapper
+        run: |
+          cd twa
+          # gradle wrapper JAR 다운로드
+          mkdir -p gradle/wrapper
+          curl -sL "https://github.com/nicoulaj/gradle-wrapper-action/releases/download/v1/gradle-wrapper.jar" \
+            -o gradle/wrapper/gradle-wrapper.jar 2>/dev/null || \
+          curl -sL "https://raw.githubusercontent.com/gradle/gradle/v8.4.0/gradle/wrapper/gradle-wrapper.jar" \
+            -o gradle/wrapper/gradle-wrapper.jar 2>/dev/null || true
+
+          cat > gradle/wrapper/gradle-wrapper.properties << 'EOF'
           distributionBase=GRADLE_USER_HOME
           distributionPath=wrapper/dists
           distributionUrl=https\://services.gradle.org/distributions/gradle-8.4-bin.zip
@@ -149,36 +136,37 @@ jobs:
           zipStorePath=wrapper/dists
           EOF
 
-          cd twa
-          gradle wrapper --gradle-version 8.4
+          cat > gradlew << 'GRADLEW'
+          #!/bin/sh
+          SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+          exec java -jar "$SCRIPT_DIR/gradle/wrapper/gradle-wrapper.jar" "$@"
+          GRADLEW
+
+          # 공식 gradlew 다운로드
+          curl -sL "https://raw.githubusercontent.com/gradle/gradle/v8.4.0/gradlew" -o gradlew || true
+          chmod +x gradlew
 
       - name: Generate signing keystore
         run: |
           keytool -genkey -v \
             -keystore twa/android.keystore \
-            -alias android \
-            -keyalg RSA -keysize 2048 \
-            -validity 10000 \
-            -storepass english123 \
-            -keypass english123 \
+            -alias android -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass english123 -keypass english123 \
             -dname "CN=EnglishTrainer,O=ipobrief,C=KR"
 
       - name: Build AAB
         run: |
           cd twa
-          chmod +x gradlew
-          ./gradlew bundleRelease
+          ./gradlew bundleRelease --stacktrace
 
       - name: Generate assetlinks.json
         run: |
           FP=$(keytool -list -v \
-            -keystore twa/android.keystore \
-            -alias android \
+            -keystore twa/android.keystore -alias android \
             -storepass english123 2>/dev/null \
             | grep "SHA256:" | sed 's/.*SHA256: //')
           echo "Fingerprint: $FP"
           printf '[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"io.github.ipobrief.englishtrainer","sha256_cert_fingerprints":["%s"]}}]' "$FP" > assetlinks.json
-          cat assetlinks.json
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
