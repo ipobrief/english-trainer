@@ -6412,12 +6412,44 @@ function compare(target,said){
   });
   return {score:Math.round(hit/a.length*100),marks};
 }
+// 마이크 녹음(내 발음 듣기용)
+let mediaRecorder=null, myVoiceUrl=null;
+async function startVoiceRecording(){
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    const chunks=[];
+    mediaRecorder=new MediaRecorder(stream);
+    mediaRecorder.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data)};
+    mediaRecorder.onstop=()=>{
+      if(myVoiceUrl) URL.revokeObjectURL(myVoiceUrl);
+      myVoiceUrl=URL.createObjectURL(new Blob(chunks,{type:mediaRecorder.mimeType}));
+      stream.getTracks().forEach(t=>t.stop());
+      showMyVoiceButton();
+    };
+    mediaRecorder.start();
+  }catch(e){ mediaRecorder=null; } // 녹음 실패해도 인식은 진행
+}
+function stopVoiceRecording(){
+  if(mediaRecorder&&mediaRecorder.state!=='inactive') mediaRecorder.stop();
+}
+function showMyVoiceButton(){
+  if(!myVoiceUrl) return;
+  const res=document.getElementById('recResult');
+  if(document.getElementById('btnMyVoice')) return;
+  const div=document.createElement('div'); div.style.marginTop='10px';
+  div.innerHTML=`<button id="btnMyVoice">🎧 내 발음 듣기</button>`+
+    `<button id="btnNativeVoice" style="margin-left:8px">🔊 원어민 발음 듣기</button>`;
+  res.appendChild(div);
+  document.getElementById('btnMyVoice').onclick=()=>{new Audio(myVoiceUrl).play()};
+  document.getElementById('btnNativeVoice').onclick=()=>speak(current.eng);
+}
 function startRec(){
   if(!SR){document.getElementById('recResult').innerHTML=
     '<span class="w-bad">이 브라우저는 음성인식을 지원하지 않아요. 크롬을 사용하세요.</span>';return}
   recog=new SR(); recog.lang='en-US'; recog.interimResults=false; recog.maxAlternatives=1;
   recognizing=true; document.getElementById('btnRec').textContent='🎙️ 듣는 중...';
   document.getElementById('recResult').textContent='말해보세요...';
+  startVoiceRecording();
   recog.onresult=e=>{
     const said=e.results[0][0].transcript;
     const {score,marks}=compare(current.eng,said);
@@ -6426,11 +6458,12 @@ function startRec(){
       `<div class="score" style="color:${score>=80?'var(--good)':score>=50?'var(--warn)':'var(--bad)'}">${score}점</div>`+
       `<div>${html}</div>`+
       `<div class="meta">내가 말한 것: "${said}"</div>`;
-    document.getElementById('gradeRow').style.display='flex';
+    showMyVoiceButton();
   };
   recog.onerror=e=>{document.getElementById('recResult').innerHTML=
     `<span class="w-bad">인식 오류: ${e.error} (마이크 권한을 확인하세요)</span>`};
-  recog.onend=()=>{recognizing=false;document.getElementById('btnRec').textContent='🎤 따라 말하기'};
+  recog.onend=()=>{recognizing=false;document.getElementById('btnRec').textContent='🎤 따라 말하기';
+    stopVoiceRecording();};
   recog.start();
 }
 
