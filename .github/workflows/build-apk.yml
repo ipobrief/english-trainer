@@ -1,0 +1,60 @@
+name: Build Android APK (TWA)
+
+on:
+  workflow_dispatch:  # 수동 실행
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Bubblewrap
+        run: npm install -g @bubblewrap/cli
+
+      - name: Init TWA project
+        run: |
+          mkdir twa && cd twa
+          bubblewrap init \
+            --manifest "https://ipobrief.github.io/english-trainer/manifest.json" \
+            --directory . \
+            --packageId "io.github.ipobrief.englishtrainer" \
+            --name "생활영어 암기 트레이너" \
+            --launcherName "영어 트레이너" \
+            --display "standalone" \
+            --themeColor "#0f1226" \
+            --backgroundColor "#0f1226" \
+            --startUrl "/" \
+            --iconUrl "https://ipobrief.github.io/english-trainer/icon-512.png" \
+            --maskableIconUrl "https://ipobrief.github.io/english-trainer/icon-maskable.png" \
+            --signingKeyPath "./android.keystore" \
+            --signingKeyAlias "android" \
+            --ks-pass "pass:english123" \
+            --key-pass "pass:english123" \
+            --minSdkVersion 19 \
+            --targetSdkVersion 34 \
+            --versionCode 1 \
+            --versionName "1.0.0"
+        env:
+          BUBBLEWRAP_SKIP_UPDATE: "true"
+
+      - name: Build AAB
+        run: |
+          cd twa
+          bubblewrap build --skipPwaValidation
+        env:
+          BUBBLEWRAP_SKIP_UPDATE: "true"
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: english-trainer-aab
+          path: |
+            twa/app-release-bundle.aab
+            twa/android.keystore
+            twa/assetlinks.json
+          retention-days: 30
