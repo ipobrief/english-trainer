@@ -1,0 +1,6662 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>생활영어 암기 트레이너</title>
+<style>
+  :root{
+    --bg:#0f1226; --card:#1a1f3d; --card2:#232a52; --txt:#eef1ff;
+    --muted:#9aa3d0; --accent:#5b8cff; --good:#36d399; --bad:#ff6b81;
+    --warn:#ffd166; --line:#2c3463;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,"Malgun Gothic",sans-serif;
+    background:linear-gradient(160deg,#0f1226,#141a38);color:var(--txt);min-height:100vh}
+  header{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;
+    align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+  h1{font-size:19px;margin:0}
+  .wrap{max-width:780px;margin:0 auto;padding:18px 16px 60px}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+  .tab{background:var(--card);border:1px solid var(--line);color:var(--muted);
+    padding:8px 14px;border-radius:999px;cursor:pointer;font-size:14px}
+  .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;
+    padding:22px;margin-bottom:16px}
+  .eng{font-size:26px;font-weight:700;line-height:1.35;margin:0 0 8px}
+  .kor{font-size:16px;color:var(--muted);margin:0 0 4px}
+  .meta{font-size:12px;color:var(--muted);margin-top:10px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+  button{font-family:inherit;font-size:15px;border:none;border-radius:12px;
+    padding:11px 16px;cursor:pointer;background:var(--card2);color:var(--txt);
+    border:1px solid var(--line)}
+  button:hover{filter:brightness(1.15)}
+  button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  button.good{background:var(--good);color:#06281c;border:none}
+  button.bad{background:var(--bad);color:#3a0410;border:none}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .pill{display:inline-block;background:var(--card2);border:1px solid var(--line);
+    border-radius:999px;padding:3px 10px;font-size:12px;color:var(--muted);margin-right:6px}
+  .result{margin-top:14px;font-size:17px;line-height:1.5;min-height:24px}
+  .w-ok{color:var(--good)} .w-bad{color:var(--bad);text-decoration:underline}
+  .score{font-size:40px;font-weight:800;margin:6px 0}
+  .bar{height:10px;background:var(--card2);border-radius:999px;overflow:hidden;margin-top:6px}
+  .bar>div{height:100%;background:var(--accent)}
+  .stat{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px}
+  .stat .box{background:var(--card2);border-radius:14px;padding:14px;text-align:center}
+  .stat .num{font-size:28px;font-weight:800}
+  .stat .lbl{font-size:12px;color:var(--muted);margin-top:4px}
+  label{font-size:13px;color:var(--muted)}
+  select,input[type=range],textarea,input[type=text]{font-family:inherit}
+  select{background:var(--card2);color:var(--txt);border:1px solid var(--line);
+    border-radius:10px;padding:8px 10px}
+  textarea{width:100%;background:var(--card2);color:var(--txt);border:1px solid var(--line);
+    border-radius:10px;padding:10px;min-height:90px;font-size:14px}
+  .list-item{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;
+    align-items:center;gap:10px}
+  .list-item .e{font-weight:600}
+  .list-item .k{font-size:13px;color:var(--muted)}
+  .cat-header{margin:22px 0 10px;padding:8px 14px;font-size:15px;font-weight:700;
+    color:var(--accent);background:var(--card2);border-left:4px solid var(--accent);
+    border-radius:8px}
+  .cat-header span{color:var(--muted);font-weight:400;font-size:13px}
+  .cat-header:first-child{margin-top:0}
+  .box-badge{font-size:11px;padding:2px 8px;border-radius:999px;white-space:nowrap}
+  .controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px}
+  .hint{font-size:12px;color:var(--muted);margin-top:8px}
+  .wordchips{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+  .wchip{background:var(--card2);border:1px solid var(--line);border-radius:9px;
+    padding:5px 11px;font-size:15px;cursor:pointer}
+  .wchip:hover{border-color:var(--accent)}
+  .wchip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .wordinfo{margin-top:12px;font-size:14px;line-height:1.6}
+  .wordinfo .ipa{color:var(--warn);font-size:15px}
+  .wordinfo .pos{color:var(--accent);font-weight:600}
+  .wordinfo .def{color:var(--txt)}
+  .wordinfo .ex{color:var(--muted);font-style:italic}
+  a{color:var(--accent)}
+</style>
+</head>
+<body>
+<header>
+  <h1>🗣️ 생활영어 암기 트레이너</h1>
+  <div class="controls">
+    <label>음성 <select id="voiceSel" style="max-width:200px"></select></label>
+    <label>속도 <input type="range" id="rate" min="0.6" max="1.1" step="0.05" value="0.9"></label>
+    <label><input type="checkbox" id="autoplay" checked> 자동 재생</label>
+  </div>
+</header>
+<div class="wrap">
+  <div class="tabs">
+    <div class="tab active" data-tab="learn">학습</div>
+    <div class="tab" data-tab="train">훈련</div>
+    <div class="tab" data-tab="review">틀린 문장 복습</div>
+    <div class="tab" data-tab="stats">진도</div>
+    <div class="tab" data-tab="manage">문장 관리</div>
+  </div>
+
+  <!-- LEARN -->
+  <section id="learn">
+    <div class="card" id="cardLearn">
+      <div id="catpill"></div>
+      <p class="eng" id="eng">로딩 중...</p>
+      <p class="kor" id="kor"></p>
+      <div class="meta" id="meta"></div>
+
+      <div id="wordChips" class="wordchips"></div>
+      <div id="wordInfo" class="wordinfo"></div>
+
+      <div class="row">
+        <button class="primary" id="btnPlay">🔊 발음 듣기</button>
+        <button id="btnSlow">🐢 천천히</button>
+        <button id="btnRec">🎤 따라 말하기</button>
+        <button id="btnShowKor">👁️ 뜻 보기</button>
+      </div>
+
+      <div class="result" id="recResult"></div>
+
+      <div class="row">
+        <button class="primary" id="btnNext">➡️ 다음 문장</button>
+      </div>
+    </div>
+    <p class="hint">팁: 문장이 자동으로 입에서 나올 때까지 🔊듣고 → 🎤따라 말하기를 반복하세요.
+    충분히 외웠다면 <b>훈련 탭</b>에서 한글만 보고 영어로 말해 테스트하세요.</p>
+  </section>
+
+  <!-- TRAIN -->
+  <section id="train" style="display:none">
+    <div class="card">
+      <div id="trCatpill"></div>
+      <p class="meta" style="margin-bottom:4px">아래 뜻을 영어로 말해보세요 👇</p>
+      <p class="eng" id="trKor">로딩 중...</p>
+      <div class="row">
+        <button class="primary" id="trBtnRec">🎤 영어로 말하기</button>
+        <button id="trBtnReveal">👁️ 정답 보기</button>
+        <button id="trBtnSkip">건너뛰기</button>
+      </div>
+      <div class="result" id="trResult"></div>
+      <div class="row" id="trManualRow" style="display:none">
+        <button class="good" id="trPass">✅ 맞았어요</button>
+        <button class="bad" id="trFail">🔁 다시 (반복)</button>
+      </div>
+    </div>
+    <p class="hint">한글 뜻을 보고 영어로 말하면 음성인식이 채점합니다.
+    <b>80점 이상이면 자동 통과</b>(박스↑), 그 미만이면 반복 대상이 됩니다.
+    마이크 없이 연습하려면 👁️정답 보기 후 직접 채점하세요.</p>
+  </section>
+
+  <!-- REVIEW -->
+  <section id="review" style="display:none">
+    <div class="card">
+      <h2 style="margin-top:0">틀린 문장 / 복습 대기</h2>
+      <div id="reviewList"></div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section id="stats" style="display:none">
+    <div class="card">
+      <h2 style="margin-top:0">진도</h2>
+      <div class="stat" id="statGrid"></div>
+      <div class="meta" style="margin-top:16px">라이트너 박스: 1=새 문장/틀림 → 5=완전 암기. 박스가 높을수록 오랜만에 다시 나옵니다.</div>
+      <div id="boxBars" style="margin-top:14px"></div>
+      <div class="row" style="margin-top:18px">
+        <button id="btnExportProgress">진도 백업(내보내기)</button>
+        <button class="bad" id="btnReset">진도 초기화</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- MANAGE -->
+  <section id="manage" style="display:none">
+    <div class="card">
+      <h2 style="margin-top:0">문장 추가/관리</h2>
+      <p class="hint">한 줄에 하나씩, <code>영어 문장 | 한국어 뜻 | 카테고리</code> 형식으로 입력 후 추가하세요.
+      (카테고리 생략 가능)</p>
+      <textarea id="addBox" placeholder="See you tomorrow. | 내일 봐요. | 인사
+Can I get a refund? | 환불 받을 수 있나요? | 쇼핑"></textarea>
+      <div class="row">
+        <button class="primary" id="btnAdd">➕ 문장 추가</button>
+        <button id="btnExportAll">전체 문장 내보내기(.json)</button>
+        <label class="pill" style="cursor:pointer">📂 불러오기<input type="file" id="importFile" accept=".json" hidden></label>
+      </div>
+      <div class="meta" id="manageCount" style="margin-top:12px"></div>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">전체 문장 목록</h3>
+      <div id="allList"></div>
+    </div>
+  </section>
+</div>
+
+<script>window.EMBEDDED_SENTENCES=[
+ {
+  "id": "p0",
+  "eng": "Hi, how are you?",
+  "kor": "안녕, 잘 지내?",
+  "cat": "인사"
+ },
+ {
+  "id": "p1",
+  "eng": "How's it going?",
+  "kor": "어떻게 지내?",
+  "cat": "인사"
+ },
+ {
+  "id": "p2",
+  "eng": "How have you been?",
+  "kor": "그동안 어떻게 지냈어요?",
+  "cat": "인사"
+ },
+ {
+  "id": "p3",
+  "eng": "Long time no see.",
+  "kor": "오랜만이야.",
+  "cat": "인사"
+ },
+ {
+  "id": "p4",
+  "eng": "It's good to see you.",
+  "kor": "만나서 반가워요.",
+  "cat": "인사"
+ },
+ {
+  "id": "p5",
+  "eng": "Nice to meet you.",
+  "kor": "처음 뵙겠습니다.",
+  "cat": "인사"
+ },
+ {
+  "id": "p6",
+  "eng": "Nice to see you again.",
+  "kor": "또 만나서 반가워요.",
+  "cat": "인사"
+ },
+ {
+  "id": "p7",
+  "eng": "What's up?",
+  "kor": "뭐 해? / 잘 지내?",
+  "cat": "인사"
+ },
+ {
+  "id": "p8",
+  "eng": "What have you been up to?",
+  "kor": "요즘 뭐 하고 지냈어?",
+  "cat": "인사"
+ },
+ {
+  "id": "p9",
+  "eng": "How was your weekend?",
+  "kor": "주말 어땠어요?",
+  "cat": "인사"
+ },
+ {
+  "id": "p10",
+  "eng": "How was your day?",
+  "kor": "오늘 하루 어땠어요?",
+  "cat": "인사"
+ },
+ {
+  "id": "p11",
+  "eng": "Good morning!",
+  "kor": "좋은 아침이에요!",
+  "cat": "인사"
+ },
+ {
+  "id": "p12",
+  "eng": "Good afternoon.",
+  "kor": "안녕하세요. (오후 인사)",
+  "cat": "인사"
+ },
+ {
+  "id": "p13",
+  "eng": "Good evening.",
+  "kor": "안녕하세요. (저녁 인사)",
+  "cat": "인사"
+ },
+ {
+  "id": "p14",
+  "eng": "Have a good day.",
+  "kor": "좋은 하루 보내세요.",
+  "cat": "인사"
+ },
+ {
+  "id": "p15",
+  "eng": "Have a great weekend.",
+  "kor": "좋은 주말 보내세요.",
+  "cat": "인사"
+ },
+ {
+  "id": "p16",
+  "eng": "Take care!",
+  "kor": "잘 지내! / 조심해!",
+  "cat": "인사"
+ },
+ {
+  "id": "p17",
+  "eng": "See you later.",
+  "kor": "나중에 봐요.",
+  "cat": "인사"
+ },
+ {
+  "id": "p18",
+  "eng": "See you tomorrow.",
+  "kor": "내일 봐요.",
+  "cat": "인사"
+ },
+ {
+  "id": "p19",
+  "eng": "See you next time.",
+  "kor": "다음에 봐요.",
+  "cat": "인사"
+ },
+ {
+  "id": "p20",
+  "eng": "Catch you later.",
+  "kor": "나중에 보자.",
+  "cat": "인사"
+ },
+ {
+  "id": "p21",
+  "eng": "Talk to you soon.",
+  "kor": "곧 또 얘기해요.",
+  "cat": "인사"
+ },
+ {
+  "id": "p22",
+  "eng": "It was nice talking to you.",
+  "kor": "얘기 즐거웠어요.",
+  "cat": "인사"
+ },
+ {
+  "id": "p23",
+  "eng": "Send my regards to your family.",
+  "kor": "가족분들께 안부 전해주세요.",
+  "cat": "인사"
+ },
+ {
+  "id": "p24",
+  "eng": "Let's keep in touch.",
+  "kor": "연락하고 지내요.",
+  "cat": "인사"
+ },
+ {
+  "id": "p25",
+  "eng": "Goodbye for now.",
+  "kor": "그럼 이만.",
+  "cat": "인사"
+ },
+ {
+  "id": "p26",
+  "eng": "Have a safe trip.",
+  "kor": "조심히 가세요.",
+  "cat": "인사"
+ },
+ {
+  "id": "p27",
+  "eng": "Welcome back!",
+  "kor": "돌아온 걸 환영해요!",
+  "cat": "인사"
+ },
+ {
+  "id": "p28",
+  "eng": "Long time, how are things?",
+  "kor": "오랜만이에요, 요즘 어때요?",
+  "cat": "인사"
+ },
+ {
+  "id": "p29",
+  "eng": "I'm doing well, thanks.",
+  "kor": "잘 지내요, 고마워요.",
+  "cat": "인사"
+ },
+ {
+  "id": "p30",
+  "eng": "What do you do?",
+  "kor": "무슨 일 하세요?",
+  "cat": "자기소개"
+ },
+ {
+  "id": "p31",
+  "eng": "What do you do for a living?",
+  "kor": "무슨 일로 먹고 사세요?",
+  "cat": "자기소개"
+ },
+ {
+  "id": "p32",
+  "eng": "I work in marketing.",
+  "kor": "마케팅 일을 해요.",
+  "cat": "자기소개"
+ },
+ {
+  "id": "p33",
+  "eng": "I'm a software engineer.",
+  "kor": "저는 소프트웨어 엔지니어예요.",
+  "cat": "자기소개"
+ },
+ {
+  "id": "p34",
+  "eng": "I work for a small company.",
+  "kor": "작은 회사에 다녀요.",
+  "cat": "자기소개"
+ },
+ {
+  "id": "p35",
+  "eng": "Where are you from?",
+  "kor": "어디서 오셨어요?",
+  "cat": "자기소개"
+ },
+ {
+  "id": "p36",
+  "eng": "I'm from Korea.",
+  "kor": "저는 한국에서 왔어요.",
+  "cat": "자기소개"
+ },
+ {
+  "id": "p37",
+  "eng": "I was born in Seoul.",
+  "kor": "서울에서 태어났어요.",
+  "cat": "자기소개"
+ },
+ {
+  "id": "p38",
+  "eng": "Where do you live?",
+  "kor": "어디 사세요?",
+  "cat": "자기소개"
+ },
+ {
+  "id": "p39",
+  "eng": "I live near here.",
+  "kor": "이 근처에 살아요.",
+  "cat": "자기소개"
+ },
+ {
+  "id": "p40",
+  "eng": "How long have you been here?",
+  "kor": "여기 온 지 얼마나 됐어요?",
+  "cat": "자기소개"
+ },
+ {
+  "id": "p41",
+  "eng": "I've been here for two years.",
+  "kor": "여기 온 지 2년 됐어요.",
+  "cat": "자기소개"
+ },
+ {
+  "id": "p42",
+  "eng": "I'm here on business.",
+  "kor": "출장으로 왔어요.",
+  "cat": "자기소개"
+ },
+ {
+  "id": "p43",
+  "eng": "I'm here on vacation.",
+  "kor": "휴가차 왔어요.",
+  "cat": "자기소개"
+ },
+ {
+  "id": "p44",
+  "eng": "What's your name?",
+  "kor": "이름이 뭐예요?",
+  "cat": "자기소개"
+ },
+ {
+  "id": "p45",
+  "eng": "My name is Jenny.",
+  "kor": "제 이름은 제니예요.",
+  "cat": "자기소개"
+ },
+ {
+  "id": "p46",
+  "eng": "Just call me Tom.",
+  "kor": "그냥 톰이라고 부르세요.",
+  "cat": "자기소개"
+ },
+ {
+  "id": "p47",
+  "eng": "How do you spell your name?",
+  "kor": "이름 철자가 어떻게 되나요?",
+  "cat": "자기소개"
+ },
+ {
+  "id": "p48",
+  "eng": "What do you do for fun?",
+  "kor": "취미가 뭐예요?",
+  "cat": "자기소개"
+ },
+ {
+  "id": "p49",
+  "eng": "I enjoy hiking on weekends.",
+  "kor": "주말에 등산을 즐겨요.",
+  "cat": "자기소개"
+ },
+ {
+  "id": "p50",
+  "eng": "Do you have any hobbies?",
+  "kor": "취미 있으세요?",
+  "cat": "자기소개"
+ },
+ {
+  "id": "p51",
+  "eng": "How old are you?",
+  "kor": "나이가 어떻게 되세요?",
+  "cat": "자기소개"
+ },
+ {
+  "id": "p52",
+  "eng": "I'm in my thirties.",
+  "kor": "30대예요.",
+  "cat": "자기소개"
+ },
+ {
+  "id": "p53",
+  "eng": "Are you married?",
+  "kor": "결혼하셨어요?",
+  "cat": "자기소개"
+ },
+ {
+  "id": "p54",
+  "eng": "I'm single.",
+  "kor": "미혼이에요.",
+  "cat": "자기소개"
+ },
+ {
+  "id": "p55",
+  "eng": "I have two kids.",
+  "kor": "아이가 둘 있어요.",
+  "cat": "자기소개"
+ },
+ {
+  "id": "p56",
+  "eng": "What languages do you speak?",
+  "kor": "어떤 언어를 하세요?",
+  "cat": "자기소개"
+ },
+ {
+  "id": "p57",
+  "eng": "I speak a little English.",
+  "kor": "영어를 조금 해요.",
+  "cat": "자기소개"
+ },
+ {
+  "id": "p58",
+  "eng": "I'm learning English.",
+  "kor": "영어를 배우고 있어요.",
+  "cat": "자기소개"
+ },
+ {
+  "id": "p59",
+  "eng": "Nice to get to know you.",
+  "kor": "알게 되어 반가워요.",
+  "cat": "자기소개"
+ },
+ {
+  "id": "p60",
+  "eng": "Could you help me?",
+  "kor": "도와주실 수 있어요?",
+  "cat": "부탁/도움"
+ },
+ {
+  "id": "p61",
+  "eng": "Can you give me a hand?",
+  "kor": "좀 도와줄래요?",
+  "cat": "부탁/도움"
+ },
+ {
+  "id": "p62",
+  "eng": "Can you do me a favor?",
+  "kor": "부탁 하나 들어줄래요?",
+  "cat": "부탁/도움"
+ },
+ {
+  "id": "p63",
+  "eng": "Would you mind helping me?",
+  "kor": "도와주셔도 될까요?",
+  "cat": "부탁/도움"
+ },
+ {
+  "id": "p64",
+  "eng": "Can you say that again?",
+  "kor": "다시 말해줄래요?",
+  "cat": "부탁/도움"
+ },
+ {
+  "id": "p65",
+  "eng": "Could you repeat that, please?",
+  "kor": "다시 한번 말씀해 주실래요?",
+  "cat": "부탁/도움"
+ },
+ {
+  "id": "p66",
+  "eng": "Could you speak more slowly?",
+  "kor": "좀 더 천천히 말해줄래요?",
+  "cat": "부탁/도움"
+ },
+ {
+  "id": "p67",
+  "eng": "Can you spell that for me?",
+  "kor": "철자 좀 알려줄래요?",
+  "cat": "부탁/도움"
+ },
+ {
+  "id": "p68",
+  "eng": "Could you write it down?",
+  "kor": "적어주실 수 있어요?",
+  "cat": "부탁/도움"
+ },
+ {
+  "id": "p69",
+  "eng": "Can you show me how?",
+  "kor": "어떻게 하는지 보여줄래요?",
+  "cat": "부탁/도움"
+ },
+ {
+  "id": "p70",
+  "eng": "Would you mind opening the window?",
+  "kor": "창문 좀 열어주시겠어요?",
+  "cat": "부탁/도움"
+ },
+ {
+  "id": "p71",
+  "eng": "Can I ask you something?",
+  "kor": "뭐 좀 물어봐도 돼요?",
+  "cat": "부탁/도움"
+ },
+ {
+  "id": "p72",
+  "eng": "May I ask a question?",
+  "kor": "질문 하나 해도 될까요?",
+  "cat": "부탁/도움"
+ },
+ {
+  "id": "p73",
+  "eng": "Could you pass me the salt?",
+  "kor": "소금 좀 건네줄래요?",
+  "cat": "부탁/도움"
+ },
+ {
+  "id": "p74",
+  "eng": "Can you hold this for a second?",
+  "kor": "이거 잠깐만 들어줄래요?",
+  "cat": "부탁/도움"
+ },
+ {
+  "id": "p75",
+  "eng": "Let me know if you need anything.",
+  "kor": "필요한 거 있으면 알려줘요.",
+  "cat": "부탁/도움"
+ },
+ {
+  "id": "p76",
+  "eng": "Let me help you with that.",
+  "kor": "그거 제가 도와드릴게요.",
+  "cat": "부탁/도움"
+ },
+ {
+  "id": "p77",
+  "eng": "Do you need a hand?",
+  "kor": "도움이 필요하세요?",
+  "cat": "부탁/도움"
+ },
+ {
+  "id": "p78",
+  "eng": "Sure, go ahead.",
+  "kor": "그럼요, 그렇게 하세요.",
+  "cat": "부탁/도움"
+ },
+ {
+  "id": "p79",
+  "eng": "No problem at all.",
+  "kor": "전혀 문제없어요.",
+  "cat": "부탁/도움"
+ },
+ {
+  "id": "p80",
+  "eng": "Of course, my pleasure.",
+  "kor": "물론이죠, 기꺼이요.",
+  "cat": "부탁/도움"
+ },
+ {
+  "id": "p81",
+  "eng": "I'd be happy to help.",
+  "kor": "기꺼이 도와드릴게요.",
+  "cat": "부탁/도움"
+ },
+ {
+  "id": "p82",
+  "eng": "Is there anything I can do?",
+  "kor": "제가 할 수 있는 게 있을까요?",
+  "cat": "부탁/도움"
+ },
+ {
+  "id": "p83",
+  "eng": "Thanks for your help.",
+  "kor": "도와줘서 고마워요.",
+  "cat": "부탁/도움"
+ },
+ {
+  "id": "p84",
+  "eng": "I really appreciate it.",
+  "kor": "정말 고마워요.",
+  "cat": "부탁/도움"
+ },
+ {
+  "id": "p85",
+  "eng": "I owe you one.",
+  "kor": "신세 졌네요.",
+  "cat": "부탁/도움"
+ },
+ {
+  "id": "p86",
+  "eng": "Don't mention it.",
+  "kor": "별말씀을요.",
+  "cat": "부탁/도움"
+ },
+ {
+  "id": "p87",
+  "eng": "Anytime.",
+  "kor": "언제든지요.",
+  "cat": "부탁/도움"
+ },
+ {
+  "id": "p88",
+  "eng": "Could you give me directions?",
+  "kor": "길 좀 알려주실래요?",
+  "cat": "부탁/도움"
+ },
+ {
+  "id": "p89",
+  "eng": "Can you recommend a good place?",
+  "kor": "좋은 곳 추천해 줄래요?",
+  "cat": "부탁/도움"
+ },
+ {
+  "id": "p90",
+  "eng": "I'm looking for the station.",
+  "kor": "역을 찾고 있어요.",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p91",
+  "eng": "How do I get to the airport?",
+  "kor": "공항에 어떻게 가나요?",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p92",
+  "eng": "Where is the nearest subway?",
+  "kor": "가장 가까운 지하철역이 어디예요?",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p93",
+  "eng": "Is it far from here?",
+  "kor": "여기서 먼가요?",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p94",
+  "eng": "Is it within walking distance?",
+  "kor": "걸어갈 수 있는 거리예요?",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p95",
+  "eng": "Can you show me on the map?",
+  "kor": "지도에서 보여줄 수 있어요?",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p96",
+  "eng": "Which way is downtown?",
+  "kor": "시내가 어느 쪽이에요?",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p97",
+  "eng": "How long does it take?",
+  "kor": "얼마나 걸리나요?",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p98",
+  "eng": "Does this bus go downtown?",
+  "kor": "이 버스 시내 가나요?",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p99",
+  "eng": "Where should I get off?",
+  "kor": "어디서 내려야 하나요?",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p100",
+  "eng": "I think I'm lost.",
+  "kor": "길을 잃은 것 같아요.",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p101",
+  "eng": "Where am I on this map?",
+  "kor": "이 지도에서 제가 어디 있나요?",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p102",
+  "eng": "Where's the nearest restroom?",
+  "kor": "가장 가까운 화장실이 어디예요?",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p103",
+  "eng": "How much is a ticket?",
+  "kor": "표가 얼마예요?",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p104",
+  "eng": "One ticket to Boston, please.",
+  "kor": "보스턴행 표 한 장 주세요.",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p105",
+  "eng": "What time is the next train?",
+  "kor": "다음 기차는 몇 시예요?",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p106",
+  "eng": "Which platform is it?",
+  "kor": "어느 승강장이에요?",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p107",
+  "eng": "Is this seat taken?",
+  "kor": "이 자리 주인 있어요?",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p108",
+  "eng": "I'd like to rent a car.",
+  "kor": "차를 빌리고 싶어요.",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p109",
+  "eng": "Can I have a city map?",
+  "kor": "도시 지도 한 장 받을 수 있어요?",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p110",
+  "eng": "Is there a tourist information center?",
+  "kor": "관광 안내소가 있나요?",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p111",
+  "eng": "What's the must-see place here?",
+  "kor": "여기 꼭 봐야 할 곳이 어디예요?",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p112",
+  "eng": "Can you take a picture of us?",
+  "kor": "저희 사진 좀 찍어주실래요?",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p113",
+  "eng": "How far is the beach?",
+  "kor": "해변까지 얼마나 먼가요?",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p114",
+  "eng": "I'd like to check in, please.",
+  "kor": "체크인 하고 싶어요.",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p115",
+  "eng": "I have a reservation.",
+  "kor": "예약했어요.",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p116",
+  "eng": "What time is checkout?",
+  "kor": "체크아웃 몇 시예요?",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p117",
+  "eng": "Could I get a wake-up call?",
+  "kor": "모닝콜 부탁해도 될까요?",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p118",
+  "eng": "Is breakfast included?",
+  "kor": "조식이 포함되어 있나요?",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p119",
+  "eng": "The room is too cold.",
+  "kor": "방이 너무 추워요.",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p120",
+  "eng": "Could I get extra towels?",
+  "kor": "수건 좀 더 받을 수 있어요?",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p121",
+  "eng": "Where can I exchange money?",
+  "kor": "어디서 환전할 수 있나요?",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p122",
+  "eng": "Is there Wi-Fi here?",
+  "kor": "여기 와이파이 되나요?",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p123",
+  "eng": "What's the Wi-Fi password?",
+  "kor": "와이파이 비밀번호가 뭐예요?",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p124",
+  "eng": "Can I leave my bags here?",
+  "kor": "여기 가방을 맡겨도 될까요?",
+  "cat": "여행/길찾기"
+ },
+ {
+  "id": "p125",
+  "eng": "Where is the check-in counter?",
+  "kor": "체크인 카운터가 어디예요?",
+  "cat": "공항"
+ },
+ {
+  "id": "p126",
+  "eng": "I'd like a window seat.",
+  "kor": "창가 자리로 주세요.",
+  "cat": "공항"
+ },
+ {
+  "id": "p127",
+  "eng": "I'd like an aisle seat, please.",
+  "kor": "통로 쪽 자리로 주세요.",
+  "cat": "공항"
+ },
+ {
+  "id": "p128",
+  "eng": "How many bags can I check?",
+  "kor": "수하물 몇 개까지 부칠 수 있어요?",
+  "cat": "공항"
+ },
+ {
+  "id": "p129",
+  "eng": "Is this carry-on okay?",
+  "kor": "이거 기내 반입 되나요?",
+  "cat": "공항"
+ },
+ {
+  "id": "p130",
+  "eng": "What's the gate number?",
+  "kor": "탑승구 번호가 몇 번이에요?",
+  "cat": "공항"
+ },
+ {
+  "id": "p131",
+  "eng": "When does boarding start?",
+  "kor": "탑승은 언제 시작하나요?",
+  "cat": "공항"
+ },
+ {
+  "id": "p132",
+  "eng": "My flight is delayed.",
+  "kor": "제 항공편이 지연됐어요.",
+  "cat": "공항"
+ },
+ {
+  "id": "p133",
+  "eng": "I missed my connecting flight.",
+  "kor": "연결 항공편을 놓쳤어요.",
+  "cat": "공항"
+ },
+ {
+  "id": "p134",
+  "eng": "Where is the baggage claim?",
+  "kor": "수하물 찾는 곳이 어디예요?",
+  "cat": "공항"
+ },
+ {
+  "id": "p135",
+  "eng": "My luggage is missing.",
+  "kor": "제 짐이 안 보여요.",
+  "cat": "공항"
+ },
+ {
+  "id": "p136",
+  "eng": "I'm here for sightseeing.",
+  "kor": "관광하러 왔어요.",
+  "cat": "공항"
+ },
+ {
+  "id": "p137",
+  "eng": "I'll be staying for a week.",
+  "kor": "일주일 머물 거예요.",
+  "cat": "공항"
+ },
+ {
+  "id": "p138",
+  "eng": "Where is customs?",
+  "kor": "세관이 어디예요?",
+  "cat": "공항"
+ },
+ {
+  "id": "p139",
+  "eng": "I have nothing to declare.",
+  "kor": "신고할 것이 없어요.",
+  "cat": "공항"
+ },
+ {
+  "id": "p140",
+  "eng": "Where can I find a taxi?",
+  "kor": "택시는 어디서 타나요?",
+  "cat": "공항"
+ },
+ {
+  "id": "p141",
+  "eng": "Is there an airport shuttle?",
+  "kor": "공항 셔틀이 있나요?",
+  "cat": "공항"
+ },
+ {
+  "id": "p142",
+  "eng": "How do I get to the city center?",
+  "kor": "시내까지 어떻게 가나요?",
+  "cat": "공항"
+ },
+ {
+  "id": "p143",
+  "eng": "Can I have a customs form?",
+  "kor": "세관 신고서 한 장 주실래요?",
+  "cat": "공항"
+ },
+ {
+  "id": "p144",
+  "eng": "Is the flight on time?",
+  "kor": "항공편이 정시인가요?",
+  "cat": "공항"
+ },
+ {
+  "id": "p145",
+  "eng": "A table for two, please.",
+  "kor": "두 명 자리 주세요.",
+  "cat": "식당"
+ },
+ {
+  "id": "p146",
+  "eng": "Do you have a table available?",
+  "kor": "자리 있나요?",
+  "cat": "식당"
+ },
+ {
+  "id": "p147",
+  "eng": "We have a reservation under Kim.",
+  "kor": "김 이름으로 예약했어요.",
+  "cat": "식당"
+ },
+ {
+  "id": "p148",
+  "eng": "Can I see the menu?",
+  "kor": "메뉴 좀 볼 수 있을까요?",
+  "cat": "식당"
+ },
+ {
+  "id": "p149",
+  "eng": "What do you recommend?",
+  "kor": "뭐가 맛있어요?",
+  "cat": "식당"
+ },
+ {
+  "id": "p150",
+  "eng": "What's today's special?",
+  "kor": "오늘의 특선이 뭐예요?",
+  "cat": "식당"
+ },
+ {
+  "id": "p151",
+  "eng": "I'll have the steak.",
+  "kor": "스테이크로 할게요.",
+  "cat": "식당"
+ },
+ {
+  "id": "p152",
+  "eng": "I'll have the same.",
+  "kor": "같은 걸로 할게요.",
+  "cat": "식당"
+ },
+ {
+  "id": "p153",
+  "eng": "Can I get this without onions?",
+  "kor": "양파 빼고 주실 수 있어요?",
+  "cat": "식당"
+ },
+ {
+  "id": "p154",
+  "eng": "Is this dish spicy?",
+  "kor": "이 음식 매워요?",
+  "cat": "식당"
+ },
+ {
+  "id": "p155",
+  "eng": "I'm allergic to peanuts.",
+  "kor": "땅콩 알레르기가 있어요.",
+  "cat": "식당"
+ },
+ {
+  "id": "p156",
+  "eng": "Could I get some water?",
+  "kor": "물 좀 주실래요?",
+  "cat": "식당"
+ },
+ {
+  "id": "p157",
+  "eng": "Can we get some more napkins?",
+  "kor": "냅킨 좀 더 주실래요?",
+  "cat": "식당"
+ },
+ {
+  "id": "p158",
+  "eng": "Could I get a refill?",
+  "kor": "리필 받을 수 있어요?",
+  "cat": "식당"
+ },
+ {
+  "id": "p159",
+  "eng": "This isn't what I ordered.",
+  "kor": "제가 주문한 게 아니에요.",
+  "cat": "식당"
+ },
+ {
+  "id": "p160",
+  "eng": "Could we get the check?",
+  "kor": "계산서 주실래요?",
+  "cat": "식당"
+ },
+ {
+  "id": "p161",
+  "eng": "Can I pay by card?",
+  "kor": "카드로 결제돼요?",
+  "cat": "식당"
+ },
+ {
+  "id": "p162",
+  "eng": "Can we split the bill?",
+  "kor": "계산 나눠서 해도 돼요?",
+  "cat": "식당"
+ },
+ {
+  "id": "p163",
+  "eng": "Keep the change.",
+  "kor": "잔돈은 가지세요.",
+  "cat": "식당"
+ },
+ {
+  "id": "p164",
+  "eng": "Can I get this to go?",
+  "kor": "이거 포장되나요?",
+  "cat": "식당"
+ },
+ {
+  "id": "p165",
+  "eng": "Everything was great, thank you.",
+  "kor": "다 맛있었어요, 감사합니다.",
+  "cat": "식당"
+ },
+ {
+  "id": "p166",
+  "eng": "The food was delicious.",
+  "kor": "음식이 맛있었어요.",
+  "cat": "식당"
+ },
+ {
+  "id": "p167",
+  "eng": "Could I see the dessert menu?",
+  "kor": "디저트 메뉴 볼 수 있어요?",
+  "cat": "식당"
+ },
+ {
+  "id": "p168",
+  "eng": "I'd like a coffee, please.",
+  "kor": "커피 한 잔 주세요.",
+  "cat": "식당"
+ },
+ {
+  "id": "p169",
+  "eng": "Can I get the bill separately?",
+  "kor": "계산 따로 해도 돼요?",
+  "cat": "식당"
+ },
+ {
+  "id": "p170",
+  "eng": "Is service charge included?",
+  "kor": "봉사료가 포함되어 있나요?",
+  "cat": "식당"
+ },
+ {
+  "id": "p171",
+  "eng": "Could you warm this up?",
+  "kor": "이거 데워주실 수 있어요?",
+  "cat": "식당"
+ },
+ {
+  "id": "p172",
+  "eng": "Do you have a vegetarian option?",
+  "kor": "채식 메뉴 있어요?",
+  "cat": "식당"
+ },
+ {
+  "id": "p173",
+  "eng": "Excuse me, we're ready to order.",
+  "kor": "저기요, 주문할게요.",
+  "cat": "식당"
+ },
+ {
+  "id": "p174",
+  "eng": "Can I have the wine list?",
+  "kor": "와인 리스트 볼 수 있어요?",
+  "cat": "식당"
+ },
+ {
+  "id": "p175",
+  "eng": "Can I get a latte, please?",
+  "kor": "라떼 한 잔 주세요.",
+  "cat": "카페"
+ },
+ {
+  "id": "p176",
+  "eng": "I'll have an iced americano.",
+  "kor": "아이스 아메리카노로 할게요.",
+  "cat": "카페"
+ },
+ {
+  "id": "p177",
+  "eng": "For here or to go?",
+  "kor": "드시고 가세요, 가져가세요?",
+  "cat": "카페"
+ },
+ {
+  "id": "p178",
+  "eng": "To go, please.",
+  "kor": "포장이요.",
+  "cat": "카페"
+ },
+ {
+  "id": "p179",
+  "eng": "Can I get it with less ice?",
+  "kor": "얼음 적게 넣어주실래요?",
+  "cat": "카페"
+ },
+ {
+  "id": "p180",
+  "eng": "Do you have decaf?",
+  "kor": "디카페인 있어요?",
+  "cat": "카페"
+ },
+ {
+  "id": "p181",
+  "eng": "Can I get oat milk instead?",
+  "kor": "오트밀크로 바꿔주실 수 있어요?",
+  "cat": "카페"
+ },
+ {
+  "id": "p182",
+  "eng": "What sizes do you have?",
+  "kor": "사이즈가 어떻게 되나요?",
+  "cat": "카페"
+ },
+ {
+  "id": "p183",
+  "eng": "I'll take a medium.",
+  "kor": "미디엄으로 할게요.",
+  "cat": "카페"
+ },
+ {
+  "id": "p184",
+  "eng": "Can I get a receipt?",
+  "kor": "영수증 받을 수 있어요?",
+  "cat": "카페"
+ },
+ {
+  "id": "p185",
+  "eng": "Is this table free?",
+  "kor": "이 자리 비어 있나요?",
+  "cat": "카페"
+ },
+ {
+  "id": "p186",
+  "eng": "Can I use your restroom?",
+  "kor": "화장실 써도 될까요?",
+  "cat": "카페"
+ },
+ {
+  "id": "p187",
+  "eng": "Do you have any pastries?",
+  "kor": "빵 종류 있어요?",
+  "cat": "카페"
+ },
+ {
+  "id": "p188",
+  "eng": "I'd like it extra hot.",
+  "kor": "아주 뜨겁게 해주세요.",
+  "cat": "카페"
+ },
+ {
+  "id": "p189",
+  "eng": "Could I get a cup of water?",
+  "kor": "물 한 컵 받을 수 있어요?",
+  "cat": "카페"
+ },
+ {
+  "id": "p190",
+  "eng": "How much is this?",
+  "kor": "이거 얼마예요?",
+  "cat": "쇼핑"
+ },
+ {
+  "id": "p191",
+  "eng": "How much does it cost?",
+  "kor": "얼마예요?",
+  "cat": "쇼핑"
+ },
+ {
+  "id": "p192",
+  "eng": "I'm just looking, thanks.",
+  "kor": "그냥 둘러보는 거예요, 감사해요.",
+  "cat": "쇼핑"
+ },
+ {
+  "id": "p193",
+  "eng": "Do you have this in a smaller size?",
+  "kor": "이거 더 작은 사이즈 있어요?",
+  "cat": "쇼핑"
+ },
+ {
+  "id": "p194",
+  "eng": "Do you have this in another color?",
+  "kor": "이거 다른 색 있어요?",
+  "cat": "쇼핑"
+ },
+ {
+  "id": "p195",
+  "eng": "Can I try this on?",
+  "kor": "이거 입어봐도 돼요?",
+  "cat": "쇼핑"
+ },
+ {
+  "id": "p196",
+  "eng": "Where is the fitting room?",
+  "kor": "탈의실이 어디예요?",
+  "cat": "쇼핑"
+ },
+ {
+  "id": "p197",
+  "eng": "It's too tight.",
+  "kor": "너무 꽉 껴요.",
+  "cat": "쇼핑"
+ },
+ {
+  "id": "p198",
+  "eng": "It's a little big.",
+  "kor": "좀 커요.",
+  "cat": "쇼핑"
+ },
+ {
+  "id": "p199",
+  "eng": "Do you have a bigger one?",
+  "kor": "더 큰 거 있어요?",
+  "cat": "쇼핑"
+ },
+ {
+  "id": "p200",
+  "eng": "Is this on sale?",
+  "kor": "이거 세일 중이에요?",
+  "cat": "쇼핑"
+ },
+ {
+  "id": "p201",
+  "eng": "Is there a discount?",
+  "kor": "할인 되나요?",
+  "cat": "쇼핑"
+ },
+ {
+  "id": "p202",
+  "eng": "Can you give me a discount?",
+  "kor": "좀 깎아 주실 수 있어요?",
+  "cat": "쇼핑"
+ },
+ {
+  "id": "p203",
+  "eng": "I'll take it.",
+  "kor": "이걸로 할게요.",
+  "cat": "쇼핑"
+ },
+ {
+  "id": "p204",
+  "eng": "I'll take two of these.",
+  "kor": "이거 두 개 살게요.",
+  "cat": "쇼핑"
+ },
+ {
+  "id": "p205",
+  "eng": "Do you take credit cards?",
+  "kor": "카드 받으세요?",
+  "cat": "쇼핑"
+ },
+ {
+  "id": "p206",
+  "eng": "Can I pay in cash?",
+  "kor": "현금으로 내도 돼요?",
+  "cat": "쇼핑"
+ },
+ {
+  "id": "p207",
+  "eng": "Can I get a refund?",
+  "kor": "환불 받을 수 있나요?",
+  "cat": "쇼핑"
+ },
+ {
+  "id": "p208",
+  "eng": "Can I exchange this?",
+  "kor": "이거 교환할 수 있어요?",
+  "cat": "쇼핑"
+ },
+ {
+  "id": "p209",
+  "eng": "Do you have a receipt?",
+  "kor": "영수증 있어요?",
+  "cat": "쇼핑"
+ },
+ {
+  "id": "p210",
+  "eng": "Can I get a bag?",
+  "kor": "봉투 하나 주실래요?",
+  "cat": "쇼핑"
+ },
+ {
+  "id": "p211",
+  "eng": "Where do I pay?",
+  "kor": "어디서 계산하나요?",
+  "cat": "쇼핑"
+ },
+ {
+  "id": "p212",
+  "eng": "Is this the final price?",
+  "kor": "이게 최종 가격이에요?",
+  "cat": "쇼핑"
+ },
+ {
+  "id": "p213",
+  "eng": "That's a bit expensive.",
+  "kor": "좀 비싸네요.",
+  "cat": "쇼핑"
+ },
+ {
+  "id": "p214",
+  "eng": "Do you ship overseas?",
+  "kor": "해외 배송 되나요?",
+  "cat": "쇼핑"
+ },
+ {
+  "id": "p215",
+  "eng": "When will it be back in stock?",
+  "kor": "언제 재입고 되나요?",
+  "cat": "쇼핑"
+ },
+ {
+  "id": "p216",
+  "eng": "Could you gift-wrap it?",
+  "kor": "선물 포장해 주실 수 있어요?",
+  "cat": "쇼핑"
+ },
+ {
+  "id": "p217",
+  "eng": "I'm looking for a gift.",
+  "kor": "선물을 찾고 있어요.",
+  "cat": "쇼핑"
+ },
+ {
+  "id": "p218",
+  "eng": "Can I look around first?",
+  "kor": "먼저 좀 둘러봐도 돼요?",
+  "cat": "쇼핑"
+ },
+ {
+  "id": "p219",
+  "eng": "Do you have this in stock?",
+  "kor": "이거 재고 있어요?",
+  "cat": "쇼핑"
+ },
+ {
+  "id": "p220",
+  "eng": "I think you're right.",
+  "kor": "당신 말이 맞는 것 같아요.",
+  "cat": "의견/대화"
+ },
+ {
+  "id": "p221",
+  "eng": "I'm not sure about that.",
+  "kor": "그건 잘 모르겠어요.",
+  "cat": "의견/대화"
+ },
+ {
+  "id": "p222",
+  "eng": "That makes sense.",
+  "kor": "말 되네요.",
+  "cat": "의견/대화"
+ },
+ {
+  "id": "p223",
+  "eng": "I see your point.",
+  "kor": "무슨 말인지 알겠어요.",
+  "cat": "의견/대화"
+ },
+ {
+  "id": "p224",
+  "eng": "I couldn't agree more.",
+  "kor": "전적으로 동의해요.",
+  "cat": "의견/대화"
+ },
+ {
+  "id": "p225",
+  "eng": "I disagree, actually.",
+  "kor": "사실 저는 생각이 달라요.",
+  "cat": "의견/대화"
+ },
+ {
+  "id": "p226",
+  "eng": "It depends.",
+  "kor": "상황에 따라 달라요.",
+  "cat": "의견/대화"
+ },
+ {
+  "id": "p227",
+  "eng": "That's a good question.",
+  "kor": "좋은 질문이에요.",
+  "cat": "의견/대화"
+ },
+ {
+  "id": "p228",
+  "eng": "Let me think about it.",
+  "kor": "좀 생각해 볼게요.",
+  "cat": "의견/대화"
+ },
+ {
+  "id": "p229",
+  "eng": "In my opinion, it's too risky.",
+  "kor": "제 생각엔 너무 위험해요.",
+  "cat": "의견/대화"
+ },
+ {
+  "id": "p230",
+  "eng": "What do you think?",
+  "kor": "어떻게 생각해요?",
+  "cat": "의견/대화"
+ },
+ {
+  "id": "p231",
+  "eng": "How do you feel about it?",
+  "kor": "그것에 대해 어떻게 생각해요?",
+  "cat": "의견/대화"
+ },
+ {
+  "id": "p232",
+  "eng": "I'd say it's worth a try.",
+  "kor": "해볼 만한 것 같아요.",
+  "cat": "의견/대화"
+ },
+ {
+  "id": "p233",
+  "eng": "That sounds reasonable.",
+  "kor": "합리적인 것 같네요.",
+  "cat": "의견/대화"
+ },
+ {
+  "id": "p234",
+  "eng": "I'm afraid I can't agree.",
+  "kor": "죄송하지만 동의하기 어려워요.",
+  "cat": "의견/대화"
+ },
+ {
+  "id": "p235",
+  "eng": "You have a point there.",
+  "kor": "일리 있는 말이에요.",
+  "cat": "의견/대화"
+ },
+ {
+  "id": "p236",
+  "eng": "Let's agree to disagree.",
+  "kor": "서로 생각이 다른 걸로 하죠.",
+  "cat": "의견/대화"
+ },
+ {
+  "id": "p237",
+  "eng": "That's exactly what I think.",
+  "kor": "제 생각이 바로 그거예요.",
+  "cat": "의견/대화"
+ },
+ {
+  "id": "p238",
+  "eng": "I'm on the fence about it.",
+  "kor": "아직 잘 모르겠어요.",
+  "cat": "의견/대화"
+ },
+ {
+  "id": "p239",
+  "eng": "Honestly, I'm not convinced.",
+  "kor": "솔직히 잘 납득이 안 돼요.",
+  "cat": "의견/대화"
+ },
+ {
+  "id": "p240",
+  "eng": "Can you give me an example?",
+  "kor": "예를 들어줄 수 있어요?",
+  "cat": "의견/대화"
+ },
+ {
+  "id": "p241",
+  "eng": "Let me put it another way.",
+  "kor": "다르게 말해볼게요.",
+  "cat": "의견/대화"
+ },
+ {
+  "id": "p242",
+  "eng": "That's a fair point.",
+  "kor": "타당한 지적이에요.",
+  "cat": "의견/대화"
+ },
+ {
+  "id": "p243",
+  "eng": "I'd rather not say.",
+  "kor": "말 안 하는 게 낫겠어요.",
+  "cat": "의견/대화"
+ },
+ {
+  "id": "p244",
+  "eng": "It's just my opinion.",
+  "kor": "그냥 제 생각이에요.",
+  "cat": "의견/대화"
+ },
+ {
+  "id": "p245",
+  "eng": "I see what you mean.",
+  "kor": "무슨 뜻인지 알겠어요.",
+  "cat": "의견/대화"
+ },
+ {
+  "id": "p246",
+  "eng": "That sounds great.",
+  "kor": "좋은 생각이에요.",
+  "cat": "의견/대화"
+ },
+ {
+  "id": "p247",
+  "eng": "I'm not so sure.",
+  "kor": "글쎄요, 잘 모르겠어요.",
+  "cat": "의견/대화"
+ },
+ {
+  "id": "p248",
+  "eng": "Let's hear what they think.",
+  "kor": "그들 생각도 들어보죠.",
+  "cat": "의견/대화"
+ },
+ {
+  "id": "p249",
+  "eng": "Either way works for me.",
+  "kor": "어느 쪽이든 괜찮아요.",
+  "cat": "의견/대화"
+ },
+ {
+  "id": "p250",
+  "eng": "I'm so glad to hear that.",
+  "kor": "그 말 들으니 정말 기뻐요.",
+  "cat": "감정/공감"
+ },
+ {
+  "id": "p251",
+  "eng": "That's wonderful news.",
+  "kor": "정말 좋은 소식이에요.",
+  "cat": "감정/공감"
+ },
+ {
+  "id": "p252",
+  "eng": "I'm really happy for you.",
+  "kor": "정말 잘됐네요.",
+  "cat": "감정/공감"
+ },
+ {
+  "id": "p253",
+  "eng": "Congratulations!",
+  "kor": "축하해요!",
+  "cat": "감정/공감"
+ },
+ {
+  "id": "p254",
+  "eng": "I'm a little tired today.",
+  "kor": "오늘 좀 피곤해요.",
+  "cat": "감정/공감"
+ },
+ {
+  "id": "p255",
+  "eng": "I'm exhausted.",
+  "kor": "완전 지쳤어요.",
+  "cat": "감정/공감"
+ },
+ {
+  "id": "p256",
+  "eng": "I'm so excited!",
+  "kor": "정말 신나요!",
+  "cat": "감정/공감"
+ },
+ {
+  "id": "p257",
+  "eng": "I can't wait.",
+  "kor": "빨리 하고 싶어요.",
+  "cat": "감정/공감"
+ },
+ {
+  "id": "p258",
+  "eng": "Don't worry about it.",
+  "kor": "걱정하지 마세요.",
+  "cat": "감정/공감"
+ },
+ {
+  "id": "p259",
+  "eng": "Everything will be fine.",
+  "kor": "다 잘될 거예요.",
+  "cat": "감정/공감"
+ },
+ {
+  "id": "p260",
+  "eng": "I'm sorry to hear that.",
+  "kor": "그것 참 안됐네요.",
+  "cat": "감정/공감"
+ },
+ {
+  "id": "p261",
+  "eng": "That's too bad.",
+  "kor": "안타깝네요.",
+  "cat": "감정/공감"
+ },
+ {
+  "id": "p262",
+  "eng": "I know how you feel.",
+  "kor": "마음 이해해요.",
+  "cat": "감정/공감"
+ },
+ {
+  "id": "p263",
+  "eng": "Cheer up!",
+  "kor": "기운 내요!",
+  "cat": "감정/공감"
+ },
+ {
+  "id": "p264",
+  "eng": "Hang in there.",
+  "kor": "조금만 버텨요.",
+  "cat": "감정/공감"
+ },
+ {
+  "id": "p265",
+  "eng": "Take it easy.",
+  "kor": "너무 무리하지 마요.",
+  "cat": "감정/공감"
+ },
+ {
+  "id": "p266",
+  "eng": "I'm proud of you.",
+  "kor": "네가 자랑스러워.",
+  "cat": "감정/공감"
+ },
+ {
+  "id": "p267",
+  "eng": "That must be hard.",
+  "kor": "많이 힘들겠어요.",
+  "cat": "감정/공감"
+ },
+ {
+  "id": "p268",
+  "eng": "I feel the same way.",
+  "kor": "저도 같은 마음이에요.",
+  "cat": "감정/공감"
+ },
+ {
+  "id": "p269",
+  "eng": "I'm nervous about it.",
+  "kor": "그게 좀 긴장돼요.",
+  "cat": "감정/공감"
+ },
+ {
+  "id": "p270",
+  "eng": "I'm a bit worried.",
+  "kor": "좀 걱정돼요.",
+  "cat": "감정/공감"
+ },
+ {
+  "id": "p271",
+  "eng": "What a relief!",
+  "kor": "정말 다행이에요!",
+  "cat": "감정/공감"
+ },
+ {
+  "id": "p272",
+  "eng": "I'm disappointed.",
+  "kor": "실망스러워요.",
+  "cat": "감정/공감"
+ },
+ {
+  "id": "p273",
+  "eng": "That's frustrating.",
+  "kor": "답답하네요.",
+  "cat": "감정/공감"
+ },
+ {
+  "id": "p274",
+  "eng": "I appreciate your support.",
+  "kor": "응원해 줘서 고마워요.",
+  "cat": "감정/공감"
+ },
+ {
+  "id": "p275",
+  "eng": "You did a great job.",
+  "kor": "정말 잘했어요.",
+  "cat": "감정/공감"
+ },
+ {
+  "id": "p276",
+  "eng": "I'm grateful for everything.",
+  "kor": "모든 게 고마워요.",
+  "cat": "감정/공감"
+ },
+ {
+  "id": "p277",
+  "eng": "It means a lot to me.",
+  "kor": "저한텐 정말 큰 의미예요.",
+  "cat": "감정/공감"
+ },
+ {
+  "id": "p278",
+  "eng": "Don't be too hard on yourself.",
+  "kor": "너무 자책하지 마요.",
+  "cat": "감정/공감"
+ },
+ {
+  "id": "p279",
+  "eng": "It's going to be okay.",
+  "kor": "괜찮아질 거예요.",
+  "cat": "감정/공감"
+ },
+ {
+  "id": "p280",
+  "eng": "What time is it?",
+  "kor": "지금 몇 시예요?",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p281",
+  "eng": "I'm running late.",
+  "kor": "좀 늦을 것 같아요.",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p282",
+  "eng": "Let's grab a coffee.",
+  "kor": "커피 한잔 하자.",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p283",
+  "eng": "Let's grab lunch sometime.",
+  "kor": "언제 점심 같이 해요.",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p284",
+  "eng": "What are you up to this weekend?",
+  "kor": "주말에 뭐 해?",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p285",
+  "eng": "Any plans for tonight?",
+  "kor": "오늘 저녁에 뭐 해요?",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p286",
+  "eng": "The weather is nice today.",
+  "kor": "오늘 날씨 좋네요.",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p287",
+  "eng": "It looks like rain.",
+  "kor": "비 올 것 같아요.",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p288",
+  "eng": "It's freezing outside.",
+  "kor": "밖에 너무 추워요.",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p289",
+  "eng": "I'll be right back.",
+  "kor": "금방 올게요.",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p290",
+  "eng": "Give me a second.",
+  "kor": "잠깐만요.",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p291",
+  "eng": "It's up to you.",
+  "kor": "당신이 정하세요.",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p292",
+  "eng": "Whatever works for you.",
+  "kor": "편한 대로 하세요.",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p293",
+  "eng": "Sounds good to me.",
+  "kor": "난 좋아요.",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p294",
+  "eng": "Maybe next time.",
+  "kor": "다음에 하자.",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p295",
+  "eng": "Let's call it a day.",
+  "kor": "오늘은 여기까지 하죠.",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p296",
+  "eng": "Time flies.",
+  "kor": "시간 참 빠르네요.",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p297",
+  "eng": "I can't believe it's already Friday.",
+  "kor": "벌써 금요일이라니.",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p298",
+  "eng": "How's the family?",
+  "kor": "가족들은 잘 지내요?",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p299",
+  "eng": "Did you sleep well?",
+  "kor": "잘 잤어요?",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p300",
+  "eng": "I'm starving.",
+  "kor": "배고파 죽겠어요.",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p301",
+  "eng": "Let's split the bill.",
+  "kor": "계산 나눠서 하자.",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p302",
+  "eng": "I'll get it this time.",
+  "kor": "이번엔 제가 낼게요.",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p303",
+  "eng": "It's on me.",
+  "kor": "제가 살게요.",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p304",
+  "eng": "Long day, huh?",
+  "kor": "긴 하루였죠?",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p305",
+  "eng": "Same here.",
+  "kor": "저도 그래요.",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p306",
+  "eng": "Tell me about it.",
+  "kor": "그러게 말이에요.",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p307",
+  "eng": "No way!",
+  "kor": "말도 안 돼!",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p308",
+  "eng": "Guess what?",
+  "kor": "그거 알아요?",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p309",
+  "eng": "By the way, did you hear the news?",
+  "kor": "그런데, 그 소식 들었어요?",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p310",
+  "eng": "Let's catch up soon.",
+  "kor": "조만간 얘기 좀 해요.",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p311",
+  "eng": "I haven't seen you in ages.",
+  "kor": "정말 오랜만이에요.",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p312",
+  "eng": "What's new with you?",
+  "kor": "요즘 새로운 일 있어요?",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p313",
+  "eng": "Not much, just the usual.",
+  "kor": "별일 없어요, 늘 똑같죠.",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p314",
+  "eng": "Keep me posted.",
+  "kor": "계속 알려줘요.",
+  "cat": "일상/스몰토크"
+ },
+ {
+  "id": "p315",
+  "eng": "Hello, who's calling?",
+  "kor": "여보세요, 누구세요?",
+  "cat": "전화"
+ },
+ {
+  "id": "p316",
+  "eng": "May I speak to Mr. Lee?",
+  "kor": "이 선생님 좀 바꿔주시겠어요?",
+  "cat": "전화"
+ },
+ {
+  "id": "p317",
+  "eng": "Speaking.",
+  "kor": "전데요.",
+  "cat": "전화"
+ },
+ {
+  "id": "p318",
+  "eng": "Hold on a second, please.",
+  "kor": "잠시만 기다려 주세요.",
+  "cat": "전화"
+ },
+ {
+  "id": "p319",
+  "eng": "Can I take a message?",
+  "kor": "메시지 남겨드릴까요?",
+  "cat": "전화"
+ },
+ {
+  "id": "p320",
+  "eng": "Could you call me back?",
+  "kor": "다시 전화 주실래요?",
+  "cat": "전화"
+ },
+ {
+  "id": "p321",
+  "eng": "I'll call you back later.",
+  "kor": "나중에 다시 전화할게요.",
+  "cat": "전화"
+ },
+ {
+  "id": "p322",
+  "eng": "You've got the wrong number.",
+  "kor": "전화 잘못 거셨어요.",
+  "cat": "전화"
+ },
+ {
+  "id": "p323",
+  "eng": "Can you hear me okay?",
+  "kor": "제 말 잘 들려요?",
+  "cat": "전화"
+ },
+ {
+  "id": "p324",
+  "eng": "You're breaking up.",
+  "kor": "소리가 끊겨요.",
+  "cat": "전화"
+ },
+ {
+  "id": "p325",
+  "eng": "Let me put you on hold.",
+  "kor": "잠시 대기시켜 드릴게요.",
+  "cat": "전화"
+ },
+ {
+  "id": "p326",
+  "eng": "I'll transfer your call.",
+  "kor": "전화 연결해 드릴게요.",
+  "cat": "전화"
+ },
+ {
+  "id": "p327",
+  "eng": "Sorry, I missed your call.",
+  "kor": "죄송해요, 전화 못 받았어요.",
+  "cat": "전화"
+ },
+ {
+  "id": "p328",
+  "eng": "Is this a good time to talk?",
+  "kor": "지금 통화 괜찮으세요?",
+  "cat": "전화"
+ },
+ {
+  "id": "p329",
+  "eng": "Let me get back to you.",
+  "kor": "나중에 다시 연락드릴게요.",
+  "cat": "전화"
+ },
+ {
+  "id": "p330",
+  "eng": "Let's schedule a meeting.",
+  "kor": "회의 일정을 잡읍시다.",
+  "cat": "직장/업무"
+ },
+ {
+  "id": "p331",
+  "eng": "Can we reschedule?",
+  "kor": "일정을 변경할 수 있을까요?",
+  "cat": "직장/업무"
+ },
+ {
+  "id": "p332",
+  "eng": "I'll send you an email.",
+  "kor": "이메일 보낼게요.",
+  "cat": "직장/업무"
+ },
+ {
+  "id": "p333",
+  "eng": "Did you get my email?",
+  "kor": "제 이메일 받으셨어요?",
+  "cat": "직장/업무"
+ },
+ {
+  "id": "p334",
+  "eng": "Let me check my calendar.",
+  "kor": "일정 좀 확인해 볼게요.",
+  "cat": "직장/업무"
+ },
+ {
+  "id": "p335",
+  "eng": "Are you available on Monday?",
+  "kor": "월요일에 시간 되세요?",
+  "cat": "직장/업무"
+ },
+ {
+  "id": "p336",
+  "eng": "Let's touch base tomorrow.",
+  "kor": "내일 다시 얘기해요.",
+  "cat": "직장/업무"
+ },
+ {
+  "id": "p337",
+  "eng": "I'm on my way.",
+  "kor": "가는 중이에요.",
+  "cat": "직장/업무"
+ },
+ {
+  "id": "p338",
+  "eng": "I'll be there in ten minutes.",
+  "kor": "10분 안에 도착해요.",
+  "cat": "직장/업무"
+ },
+ {
+  "id": "p339",
+  "eng": "I'll take care of it.",
+  "kor": "제가 처리할게요.",
+  "cat": "직장/업무"
+ },
+ {
+  "id": "p340",
+  "eng": "Leave it to me.",
+  "kor": "저한테 맡기세요.",
+  "cat": "직장/업무"
+ },
+ {
+  "id": "p341",
+  "eng": "Could you send me the file?",
+  "kor": "파일 좀 보내주실래요?",
+  "cat": "직장/업무"
+ },
+ {
+  "id": "p342",
+  "eng": "Let's go over the details.",
+  "kor": "세부 사항을 살펴봅시다.",
+  "cat": "직장/업무"
+ },
+ {
+  "id": "p343",
+  "eng": "What's the deadline?",
+  "kor": "마감이 언제예요?",
+  "cat": "직장/업무"
+ },
+ {
+  "id": "p344",
+  "eng": "Can we extend the deadline?",
+  "kor": "마감을 미룰 수 있을까요?",
+  "cat": "직장/업무"
+ },
+ {
+  "id": "p345",
+  "eng": "I'll keep you updated.",
+  "kor": "계속 업데이트해 드릴게요.",
+  "cat": "직장/업무"
+ },
+ {
+  "id": "p346",
+  "eng": "Let's split the work.",
+  "kor": "일을 나눠서 하죠.",
+  "cat": "직장/업무"
+ },
+ {
+  "id": "p347",
+  "eng": "Good job, everyone.",
+  "kor": "다들 수고했어요.",
+  "cat": "직장/업무"
+ },
+ {
+  "id": "p348",
+  "eng": "Let's wrap up the meeting.",
+  "kor": "회의를 마무리하죠.",
+  "cat": "직장/업무"
+ },
+ {
+  "id": "p349",
+  "eng": "Can you cover for me?",
+  "kor": "저 대신 좀 봐줄 수 있어요?",
+  "cat": "직장/업무"
+ },
+ {
+  "id": "p350",
+  "eng": "I'm a bit behind schedule.",
+  "kor": "일정이 좀 늦어지고 있어요.",
+  "cat": "직장/업무"
+ },
+ {
+  "id": "p351",
+  "eng": "Let me know your thoughts.",
+  "kor": "의견 알려주세요.",
+  "cat": "직장/업무"
+ },
+ {
+  "id": "p352",
+  "eng": "I'll follow up on that.",
+  "kor": "그 건은 제가 챙길게요.",
+  "cat": "직장/업무"
+ },
+ {
+  "id": "p353",
+  "eng": "Let's set up a call.",
+  "kor": "통화 일정을 잡읍시다.",
+  "cat": "직장/업무"
+ },
+ {
+  "id": "p354",
+  "eng": "Can you walk me through it?",
+  "kor": "설명 좀 해줄 수 있어요?",
+  "cat": "직장/업무"
+ },
+ {
+  "id": "p355",
+  "eng": "I'm working on it.",
+  "kor": "지금 하고 있어요.",
+  "cat": "직장/업무"
+ },
+ {
+  "id": "p356",
+  "eng": "It's almost done.",
+  "kor": "거의 다 됐어요.",
+  "cat": "직장/업무"
+ },
+ {
+  "id": "p357",
+  "eng": "Let's circle back later.",
+  "kor": "나중에 다시 얘기해요.",
+  "cat": "직장/업무"
+ },
+ {
+  "id": "p358",
+  "eng": "Thanks for the heads-up.",
+  "kor": "미리 알려줘서 고마워요.",
+  "cat": "직장/업무"
+ },
+ {
+  "id": "p359",
+  "eng": "I'm sorry, my mistake.",
+  "kor": "죄송해요, 제 실수예요.",
+  "cat": "사과/실례"
+ },
+ {
+  "id": "p360",
+  "eng": "I apologize for the delay.",
+  "kor": "늦어서 죄송합니다.",
+  "cat": "사과/실례"
+ },
+ {
+  "id": "p361",
+  "eng": "Excuse me, can I get through?",
+  "kor": "실례지만 지나가도 될까요?",
+  "cat": "사과/실례"
+ },
+ {
+  "id": "p362",
+  "eng": "Sorry to bother you.",
+  "kor": "귀찮게 해서 죄송해요.",
+  "cat": "사과/실례"
+ },
+ {
+  "id": "p363",
+  "eng": "Sorry to interrupt.",
+  "kor": "말씀 중에 죄송해요.",
+  "cat": "사과/실례"
+ },
+ {
+  "id": "p364",
+  "eng": "I didn't catch that.",
+  "kor": "못 알아들었어요.",
+  "cat": "사과/실례"
+ },
+ {
+  "id": "p365",
+  "eng": "Pardon me?",
+  "kor": "뭐라고 하셨어요?",
+  "cat": "사과/실례"
+ },
+ {
+  "id": "p366",
+  "eng": "It's not a big deal.",
+  "kor": "별일 아니에요.",
+  "cat": "사과/실례"
+ },
+ {
+  "id": "p367",
+  "eng": "Never mind.",
+  "kor": "신경 쓰지 마세요.",
+  "cat": "사과/실례"
+ },
+ {
+  "id": "p368",
+  "eng": "It's okay, don't worry.",
+  "kor": "괜찮아요, 걱정 마세요.",
+  "cat": "사과/실례"
+ },
+ {
+  "id": "p369",
+  "eng": "That's all right.",
+  "kor": "괜찮아요.",
+  "cat": "사과/실례"
+ },
+ {
+  "id": "p370",
+  "eng": "No worries.",
+  "kor": "걱정 마세요.",
+  "cat": "사과/실례"
+ },
+ {
+  "id": "p371",
+  "eng": "It was my fault.",
+  "kor": "제 잘못이었어요.",
+  "cat": "사과/실례"
+ },
+ {
+  "id": "p372",
+  "eng": "I won't let it happen again.",
+  "kor": "다시는 그러지 않을게요.",
+  "cat": "사과/실례"
+ },
+ {
+  "id": "p373",
+  "eng": "Please forgive me.",
+  "kor": "용서해 주세요.",
+  "cat": "사과/실례"
+ },
+ {
+  "id": "p374",
+  "eng": "I feel terrible about it.",
+  "kor": "정말 미안하게 생각해요.",
+  "cat": "사과/실례"
+ },
+ {
+  "id": "p375",
+  "eng": "Excuse me for a moment.",
+  "kor": "잠깐 실례할게요.",
+  "cat": "사과/실례"
+ },
+ {
+  "id": "p376",
+  "eng": "Sorry I'm late.",
+  "kor": "늦어서 미안해요.",
+  "cat": "사과/실례"
+ },
+ {
+  "id": "p377",
+  "eng": "My apologies.",
+  "kor": "죄송합니다.",
+  "cat": "사과/실례"
+ },
+ {
+  "id": "p378",
+  "eng": "Thank you for understanding.",
+  "kor": "이해해 주셔서 감사해요.",
+  "cat": "사과/실례"
+ },
+ {
+  "id": "p379",
+  "eng": "I don't feel well.",
+  "kor": "몸이 안 좋아요.",
+  "cat": "병원/건강"
+ },
+ {
+  "id": "p380",
+  "eng": "I have a headache.",
+  "kor": "머리가 아파요.",
+  "cat": "병원/건강"
+ },
+ {
+  "id": "p381",
+  "eng": "I have a fever.",
+  "kor": "열이 나요.",
+  "cat": "병원/건강"
+ },
+ {
+  "id": "p382",
+  "eng": "I have a sore throat.",
+  "kor": "목이 아파요.",
+  "cat": "병원/건강"
+ },
+ {
+  "id": "p383",
+  "eng": "I have a runny nose.",
+  "kor": "콧물이 나요.",
+  "cat": "병원/건강"
+ },
+ {
+  "id": "p384",
+  "eng": "My stomach hurts.",
+  "kor": "배가 아파요.",
+  "cat": "병원/건강"
+ },
+ {
+  "id": "p385",
+  "eng": "I think I caught a cold.",
+  "kor": "감기에 걸린 것 같아요.",
+  "cat": "병원/건강"
+ },
+ {
+  "id": "p386",
+  "eng": "I'd like to see a doctor.",
+  "kor": "진료를 받고 싶어요.",
+  "cat": "병원/건강"
+ },
+ {
+  "id": "p387",
+  "eng": "Do I need an appointment?",
+  "kor": "예약해야 하나요?",
+  "cat": "병원/건강"
+ },
+ {
+  "id": "p388",
+  "eng": "Where does it hurt?",
+  "kor": "어디가 아프세요?",
+  "cat": "병원/건강"
+ },
+ {
+  "id": "p389",
+  "eng": "How long have you felt this way?",
+  "kor": "이런 지 얼마나 됐어요?",
+  "cat": "병원/건강"
+ },
+ {
+  "id": "p390",
+  "eng": "I'm allergic to penicillin.",
+  "kor": "페니실린 알레르기가 있어요.",
+  "cat": "병원/건강"
+ },
+ {
+  "id": "p391",
+  "eng": "Can I get a prescription?",
+  "kor": "처방전 받을 수 있어요?",
+  "cat": "병원/건강"
+ },
+ {
+  "id": "p392",
+  "eng": "Where is the nearest pharmacy?",
+  "kor": "가장 가까운 약국이 어디예요?",
+  "cat": "병원/건강"
+ },
+ {
+  "id": "p393",
+  "eng": "How often should I take this?",
+  "kor": "이거 얼마나 자주 먹어야 해요?",
+  "cat": "병원/건강"
+ },
+ {
+  "id": "p394",
+  "eng": "Take this twice a day.",
+  "kor": "하루 두 번 드세요.",
+  "cat": "병원/건강"
+ },
+ {
+  "id": "p395",
+  "eng": "Is it serious?",
+  "kor": "심각한가요?",
+  "cat": "병원/건강"
+ },
+ {
+  "id": "p396",
+  "eng": "I feel dizzy.",
+  "kor": "어지러워요.",
+  "cat": "병원/건강"
+ },
+ {
+  "id": "p397",
+  "eng": "I twisted my ankle.",
+  "kor": "발목을 삐었어요.",
+  "cat": "병원/건강"
+ },
+ {
+  "id": "p398",
+  "eng": "Call an ambulance!",
+  "kor": "구급차 좀 불러주세요!",
+  "cat": "병원/건강"
+ },
+ {
+  "id": "p399",
+  "eng": "I need to rest.",
+  "kor": "좀 쉬어야겠어요.",
+  "cat": "병원/건강"
+ },
+ {
+  "id": "p400",
+  "eng": "Get well soon.",
+  "kor": "빨리 나으세요.",
+  "cat": "병원/건강"
+ },
+ {
+  "id": "p401",
+  "eng": "I have an upset stomach.",
+  "kor": "속이 안 좋아요.",
+  "cat": "병원/건강"
+ },
+ {
+  "id": "p402",
+  "eng": "Do you have anything for a cough?",
+  "kor": "기침약 있어요?",
+  "cat": "병원/건강"
+ },
+ {
+  "id": "p403",
+  "eng": "I ran out of my medication.",
+  "kor": "약이 다 떨어졌어요.",
+  "cat": "병원/건강"
+ },
+ {
+  "id": "p404",
+  "eng": "I'd like to open an account.",
+  "kor": "계좌를 개설하고 싶어요.",
+  "cat": "은행/공공"
+ },
+ {
+  "id": "p405",
+  "eng": "I'd like to withdraw some money.",
+  "kor": "돈을 좀 인출하고 싶어요.",
+  "cat": "은행/공공"
+ },
+ {
+  "id": "p406",
+  "eng": "I'd like to deposit this.",
+  "kor": "이거 입금하고 싶어요.",
+  "cat": "은행/공공"
+ },
+ {
+  "id": "p407",
+  "eng": "Where is the nearest ATM?",
+  "kor": "가장 가까운 ATM이 어디예요?",
+  "cat": "은행/공공"
+ },
+ {
+  "id": "p408",
+  "eng": "My card isn't working.",
+  "kor": "카드가 안 돼요.",
+  "cat": "은행/공공"
+ },
+ {
+  "id": "p409",
+  "eng": "I lost my card.",
+  "kor": "카드를 잃어버렸어요.",
+  "cat": "은행/공공"
+ },
+ {
+  "id": "p410",
+  "eng": "I'd like to report a lost card.",
+  "kor": "카드 분실 신고를 하고 싶어요.",
+  "cat": "은행/공공"
+ },
+ {
+  "id": "p411",
+  "eng": "What's the exchange rate today?",
+  "kor": "오늘 환율이 어떻게 되나요?",
+  "cat": "은행/공공"
+ },
+ {
+  "id": "p412",
+  "eng": "Is there a transaction fee?",
+  "kor": "수수료가 있나요?",
+  "cat": "은행/공공"
+ },
+ {
+  "id": "p413",
+  "eng": "Could I get smaller bills?",
+  "kor": "잔돈으로 바꿔 주실 수 있어요?",
+  "cat": "은행/공공"
+ },
+ {
+  "id": "p414",
+  "eng": "I need to transfer money.",
+  "kor": "송금을 해야 해요.",
+  "cat": "은행/공공"
+ },
+ {
+  "id": "p415",
+  "eng": "How long does the transfer take?",
+  "kor": "송금이 얼마나 걸려요?",
+  "cat": "은행/공공"
+ },
+ {
+  "id": "p416",
+  "eng": "Can I pay my bill here?",
+  "kor": "여기서 요금 낼 수 있어요?",
+  "cat": "은행/공공"
+ },
+ {
+  "id": "p417",
+  "eng": "I'd like to send this package.",
+  "kor": "이 소포를 보내고 싶어요.",
+  "cat": "은행/공공"
+ },
+ {
+  "id": "p418",
+  "eng": "How much is postage?",
+  "kor": "우편 요금이 얼마예요?",
+  "cat": "은행/공공"
+ },
+ {
+  "id": "p419",
+  "eng": "Make yourself at home.",
+  "kor": "편하게 계세요.",
+  "cat": "집/생활"
+ },
+ {
+  "id": "p420",
+  "eng": "Help yourself.",
+  "kor": "마음껏 드세요.",
+  "cat": "집/생활"
+ },
+ {
+  "id": "p421",
+  "eng": "Can I get you something to drink?",
+  "kor": "마실 것 좀 드릴까요?",
+  "cat": "집/생활"
+ },
+ {
+  "id": "p422",
+  "eng": "Dinner is ready.",
+  "kor": "저녁 다 됐어요.",
+  "cat": "집/생활"
+ },
+ {
+  "id": "p423",
+  "eng": "Could you set the table?",
+  "kor": "상 좀 차려줄래요?",
+  "cat": "집/생활"
+ },
+ {
+  "id": "p424",
+  "eng": "I'll do the dishes.",
+  "kor": "설거지는 내가 할게.",
+  "cat": "집/생활"
+ },
+ {
+  "id": "p425",
+  "eng": "Can you take out the trash?",
+  "kor": "쓰레기 좀 버려줄래요?",
+  "cat": "집/생활"
+ },
+ {
+  "id": "p426",
+  "eng": "The sink is clogged.",
+  "kor": "싱크대가 막혔어요.",
+  "cat": "집/생활"
+ },
+ {
+  "id": "p427",
+  "eng": "The light bulb burned out.",
+  "kor": "전구가 나갔어요.",
+  "cat": "집/생활"
+ },
+ {
+  "id": "p428",
+  "eng": "I need to do the laundry.",
+  "kor": "빨래를 해야 해요.",
+  "cat": "집/생활"
+ },
+ {
+  "id": "p429",
+  "eng": "Can you turn off the lights?",
+  "kor": "불 좀 꺼줄래요?",
+  "cat": "집/생활"
+ },
+ {
+  "id": "p430",
+  "eng": "Could you turn down the TV?",
+  "kor": "TV 소리 좀 줄여줄래요?",
+  "cat": "집/생활"
+ },
+ {
+  "id": "p431",
+  "eng": "I'll be home late tonight.",
+  "kor": "오늘 밤 늦게 들어가요.",
+  "cat": "집/생활"
+ },
+ {
+  "id": "p432",
+  "eng": "Did you lock the door?",
+  "kor": "문 잠갔어요?",
+  "cat": "집/생활"
+ },
+ {
+  "id": "p433",
+  "eng": "Let's order in tonight.",
+  "kor": "오늘 저녁은 시켜 먹자.",
+  "cat": "집/생활"
+ },
+ {
+  "id": "p434",
+  "eng": "I'm going grocery shopping.",
+  "kor": "장 보러 가요.",
+  "cat": "집/생활"
+ },
+ {
+  "id": "p435",
+  "eng": "We're out of milk.",
+  "kor": "우유가 다 떨어졌어요.",
+  "cat": "집/생활"
+ },
+ {
+  "id": "p436",
+  "eng": "Can you water the plants?",
+  "kor": "화분에 물 좀 줄래요?",
+  "cat": "집/생활"
+ },
+ {
+  "id": "p437",
+  "eng": "It's getting late.",
+  "kor": "시간이 늦었네요.",
+  "cat": "집/생활"
+ },
+ {
+  "id": "p438",
+  "eng": "Time for bed.",
+  "kor": "잘 시간이에요.",
+  "cat": "집/생활"
+ },
+ {
+  "id": "p439",
+  "eng": "It's a beautiful day.",
+  "kor": "날씨가 참 좋네요.",
+  "cat": "날씨"
+ },
+ {
+  "id": "p440",
+  "eng": "It's really hot today.",
+  "kor": "오늘 정말 덥네요.",
+  "cat": "날씨"
+ },
+ {
+  "id": "p441",
+  "eng": "It's so cold out.",
+  "kor": "밖이 너무 추워요.",
+  "cat": "날씨"
+ },
+ {
+  "id": "p442",
+  "eng": "It's raining cats and dogs.",
+  "kor": "비가 억수같이 와요.",
+  "cat": "날씨"
+ },
+ {
+  "id": "p443",
+  "eng": "Don't forget your umbrella.",
+  "kor": "우산 챙기는 거 잊지 마요.",
+  "cat": "날씨"
+ },
+ {
+  "id": "p444",
+  "eng": "It might snow tonight.",
+  "kor": "오늘 밤 눈이 올지도 몰라요.",
+  "cat": "날씨"
+ },
+ {
+  "id": "p445",
+  "eng": "The weather is changing.",
+  "kor": "날씨가 변하고 있어요.",
+  "cat": "날씨"
+ },
+ {
+  "id": "p446",
+  "eng": "It's so humid.",
+  "kor": "너무 습해요.",
+  "cat": "날씨"
+ },
+ {
+  "id": "p447",
+  "eng": "There's a strong wind today.",
+  "kor": "오늘 바람이 세네요.",
+  "cat": "날씨"
+ },
+ {
+  "id": "p448",
+  "eng": "What's the weather like there?",
+  "kor": "거기 날씨는 어때요?",
+  "cat": "날씨"
+ },
+ {
+  "id": "p449",
+  "eng": "It's supposed to rain tomorrow.",
+  "kor": "내일 비 온대요.",
+  "cat": "날씨"
+ },
+ {
+  "id": "p450",
+  "eng": "The sky is clear.",
+  "kor": "하늘이 맑아요.",
+  "cat": "날씨"
+ },
+ {
+  "id": "p451",
+  "eng": "It's foggy this morning.",
+  "kor": "오늘 아침 안개가 꼈어요.",
+  "cat": "날씨"
+ },
+ {
+  "id": "p452",
+  "eng": "Spring is finally here.",
+  "kor": "드디어 봄이 왔어요.",
+  "cat": "날씨"
+ },
+ {
+  "id": "p453",
+  "eng": "It's getting colder.",
+  "kor": "점점 추워지네요.",
+  "cat": "날씨"
+ },
+ {
+  "id": "p454",
+  "eng": "Sure, no problem.",
+  "kor": "그럼요, 문제없어요.",
+  "cat": "동의/대답"
+ },
+ {
+  "id": "p455",
+  "eng": "Absolutely.",
+  "kor": "당연하죠.",
+  "cat": "동의/대답"
+ },
+ {
+  "id": "p456",
+  "eng": "Of course.",
+  "kor": "물론이죠.",
+  "cat": "동의/대답"
+ },
+ {
+  "id": "p457",
+  "eng": "Definitely.",
+  "kor": "확실히요.",
+  "cat": "동의/대답"
+ },
+ {
+  "id": "p458",
+  "eng": "That's right.",
+  "kor": "맞아요.",
+  "cat": "동의/대답"
+ },
+ {
+  "id": "p459",
+  "eng": "Exactly.",
+  "kor": "바로 그거예요.",
+  "cat": "동의/대답"
+ },
+ {
+  "id": "p460",
+  "eng": "I think so too.",
+  "kor": "저도 그렇게 생각해요.",
+  "cat": "동의/대답"
+ },
+ {
+  "id": "p461",
+  "eng": "Good idea.",
+  "kor": "좋은 생각이에요.",
+  "cat": "동의/대답"
+ },
+ {
+  "id": "p462",
+  "eng": "Why not?",
+  "kor": "안 될 거 없죠.",
+  "cat": "동의/대답"
+ },
+ {
+  "id": "p463",
+  "eng": "Fair enough.",
+  "kor": "그럴 만하네요.",
+  "cat": "동의/대답"
+ },
+ {
+  "id": "p464",
+  "eng": "I guess so.",
+  "kor": "그런 것 같아요.",
+  "cat": "동의/대답"
+ },
+ {
+  "id": "p465",
+  "eng": "Not really.",
+  "kor": "딱히 그렇진 않아요.",
+  "cat": "동의/대답"
+ },
+ {
+  "id": "p466",
+  "eng": "I don't think so.",
+  "kor": "그렇게 생각 안 해요.",
+  "cat": "동의/대답"
+ },
+ {
+  "id": "p467",
+  "eng": "Maybe.",
+  "kor": "아마도요.",
+  "cat": "동의/대답"
+ },
+ {
+  "id": "p468",
+  "eng": "It's possible.",
+  "kor": "가능할 수도 있어요.",
+  "cat": "동의/대답"
+ },
+ {
+  "id": "p469",
+  "eng": "I'm not sure yet.",
+  "kor": "아직 잘 모르겠어요.",
+  "cat": "동의/대답"
+ },
+ {
+  "id": "p470",
+  "eng": "Let me see.",
+  "kor": "어디 보자.",
+  "cat": "동의/대답"
+ },
+ {
+  "id": "p471",
+  "eng": "That works.",
+  "kor": "그럼 되겠네요.",
+  "cat": "동의/대답"
+ },
+ {
+  "id": "p472",
+  "eng": "Sounds like a plan.",
+  "kor": "좋아요, 그렇게 해요.",
+  "cat": "동의/대답"
+ },
+ {
+  "id": "p473",
+  "eng": "Count me in.",
+  "kor": "저도 낄게요.",
+  "cat": "동의/대답"
+ },
+ {
+  "id": "p474",
+  "eng": "Can you help me, please?",
+  "kor": "좀 도와주실 수 있어요?",
+  "cat": "문제상황"
+ },
+ {
+  "id": "p475",
+  "eng": "I have a problem.",
+  "kor": "문제가 생겼어요.",
+  "cat": "문제상황"
+ },
+ {
+  "id": "p476",
+  "eng": "Something is wrong.",
+  "kor": "뭔가 잘못됐어요.",
+  "cat": "문제상황"
+ },
+ {
+  "id": "p477",
+  "eng": "It's not working.",
+  "kor": "작동이 안 돼요.",
+  "cat": "문제상황"
+ },
+ {
+  "id": "p478",
+  "eng": "I don't understand.",
+  "kor": "이해가 안 돼요.",
+  "cat": "문제상황"
+ },
+ {
+  "id": "p479",
+  "eng": "I'm confused.",
+  "kor": "헷갈려요.",
+  "cat": "문제상황"
+ },
+ {
+  "id": "p480",
+  "eng": "What should I do?",
+  "kor": "어떻게 해야 하죠?",
+  "cat": "문제상황"
+ },
+ {
+  "id": "p481",
+  "eng": "Is everything okay?",
+  "kor": "다 괜찮아요?",
+  "cat": "문제상황"
+ },
+ {
+  "id": "p482",
+  "eng": "There's been a mistake.",
+  "kor": "뭔가 착오가 있었어요.",
+  "cat": "문제상황"
+ },
+ {
+  "id": "p483",
+  "eng": "Can you fix it?",
+  "kor": "고칠 수 있어요?",
+  "cat": "문제상황"
+ },
+ {
+  "id": "p484",
+  "eng": "I need some help here.",
+  "kor": "여기 도움이 좀 필요해요.",
+  "cat": "문제상황"
+ },
+ {
+  "id": "p485",
+  "eng": "This is urgent.",
+  "kor": "급한 일이에요.",
+  "cat": "문제상황"
+ },
+ {
+  "id": "p486",
+  "eng": "Please calm down.",
+  "kor": "진정하세요.",
+  "cat": "문제상황"
+ },
+ {
+  "id": "p487",
+  "eng": "Let's figure this out.",
+  "kor": "같이 해결해 봐요.",
+  "cat": "문제상황"
+ },
+ {
+  "id": "p488",
+  "eng": "Don't panic.",
+  "kor": "당황하지 마요.",
+  "cat": "문제상황"
+ },
+ {
+  "id": "p489",
+  "eng": "I'll handle it.",
+  "kor": "제가 처리할게요.",
+  "cat": "문제상황"
+ },
+ {
+  "id": "p490",
+  "eng": "Watch out!",
+  "kor": "조심해요!",
+  "cat": "문제상황"
+ },
+ {
+  "id": "p491",
+  "eng": "Be careful.",
+  "kor": "조심하세요.",
+  "cat": "문제상황"
+ },
+ {
+  "id": "p492",
+  "eng": "Call for help.",
+  "kor": "도움을 요청하세요.",
+  "cat": "문제상황"
+ },
+ {
+  "id": "p493",
+  "eng": "It's an emergency.",
+  "kor": "비상 상황이에요.",
+  "cat": "문제상황"
+ },
+ {
+  "id": "p494",
+  "eng": "Are you free this weekend?",
+  "kor": "이번 주말에 시간 있어요?",
+  "cat": "약속/계획"
+ },
+ {
+  "id": "p495",
+  "eng": "Let's meet at six.",
+  "kor": "6시에 만나요.",
+  "cat": "약속/계획"
+ },
+ {
+  "id": "p496",
+  "eng": "Where should we meet?",
+  "kor": "어디서 만날까요?",
+  "cat": "약속/계획"
+ },
+ {
+  "id": "p497",
+  "eng": "Let's meet in front of the station.",
+  "kor": "역 앞에서 만나요.",
+  "cat": "약속/계획"
+ },
+ {
+  "id": "p498",
+  "eng": "Can we make it a bit later?",
+  "kor": "조금 늦게 만날 수 있을까요?",
+  "cat": "약속/계획"
+ },
+ {
+  "id": "p499",
+  "eng": "I'll pick you up.",
+  "kor": "제가 데리러 갈게요.",
+  "cat": "약속/계획"
+ },
+ {
+  "id": "p500",
+  "eng": "Let me check and get back to you.",
+  "kor": "확인하고 다시 알려줄게요.",
+  "cat": "약속/계획"
+ },
+ {
+  "id": "p501",
+  "eng": "Something came up.",
+  "kor": "일이 좀 생겼어요.",
+  "cat": "약속/계획"
+ },
+ {
+  "id": "p502",
+  "eng": "Can we postpone?",
+  "kor": "미룰 수 있을까요?",
+  "cat": "약속/계획"
+ },
+ {
+  "id": "p503",
+  "eng": "Let's plan ahead.",
+  "kor": "미리 계획을 세웁시다.",
+  "cat": "약속/계획"
+ },
+ {
+  "id": "p504",
+  "eng": "What time works for you?",
+  "kor": "몇 시가 괜찮아요?",
+  "cat": "약속/계획"
+ },
+ {
+  "id": "p505",
+  "eng": "I'm looking forward to it.",
+  "kor": "기대돼요.",
+  "cat": "약속/계획"
+ },
+ {
+  "id": "p506",
+  "eng": "Let's make it Friday.",
+  "kor": "금요일로 하죠.",
+  "cat": "약속/계획"
+ },
+ {
+  "id": "p507",
+  "eng": "Don't be late.",
+  "kor": "늦지 마요.",
+  "cat": "약속/계획"
+ },
+ {
+  "id": "p508",
+  "eng": "I'll see you there.",
+  "kor": "거기서 봐요.",
+  "cat": "약속/계획"
+ },
+ {
+  "id": "p509",
+  "eng": "Let's grab dinner sometime.",
+  "kor": "언제 저녁 같이 해요.",
+  "cat": "약속/계획"
+ },
+ {
+  "id": "p510",
+  "eng": "Are we still on for tonight?",
+  "kor": "오늘 저녁 약속 그대로죠?",
+  "cat": "약속/계획"
+ },
+ {
+  "id": "p511",
+  "eng": "I have to cancel, sorry.",
+  "kor": "취소해야 해요, 미안해요.",
+  "cat": "약속/계획"
+ },
+ {
+  "id": "p512",
+  "eng": "Let's reschedule for next week.",
+  "kor": "다음 주로 다시 잡아요.",
+  "cat": "약속/계획"
+ },
+ {
+  "id": "p513",
+  "eng": "Save the date.",
+  "kor": "그날 비워두세요.",
+  "cat": "약속/계획"
+ },
+ {
+  "id": "p514",
+  "eng": "This tastes great.",
+  "kor": "이거 정말 맛있어요.",
+  "cat": "음식/맛"
+ },
+ {
+  "id": "p515",
+  "eng": "It's a little salty.",
+  "kor": "좀 짜요.",
+  "cat": "음식/맛"
+ },
+ {
+  "id": "p516",
+  "eng": "It's too sweet for me.",
+  "kor": "제겐 너무 달아요.",
+  "cat": "음식/맛"
+ },
+ {
+  "id": "p517",
+  "eng": "This is delicious.",
+  "kor": "이거 맛있어요.",
+  "cat": "음식/맛"
+ },
+ {
+  "id": "p518",
+  "eng": "I'm full.",
+  "kor": "배불러요.",
+  "cat": "음식/맛"
+ },
+ {
+  "id": "p519",
+  "eng": "I'm still hungry.",
+  "kor": "아직 배고파요.",
+  "cat": "음식/맛"
+ },
+ {
+  "id": "p520",
+  "eng": "Would you like some more?",
+  "kor": "좀 더 드실래요?",
+  "cat": "음식/맛"
+ },
+ {
+  "id": "p521",
+  "eng": "No thanks, I'm good.",
+  "kor": "아니요, 괜찮아요.",
+  "cat": "음식/맛"
+ },
+ {
+  "id": "p522",
+  "eng": "What's in this dish?",
+  "kor": "이 음식에 뭐가 들었어요?",
+  "cat": "음식/맛"
+ },
+ {
+  "id": "p523",
+  "eng": "It smells amazing.",
+  "kor": "냄새가 정말 좋아요.",
+  "cat": "음식/맛"
+ },
+ {
+  "id": "p524",
+  "eng": "Can I try a bite?",
+  "kor": "한 입 먹어봐도 돼요?",
+  "cat": "음식/맛"
+ },
+ {
+  "id": "p525",
+  "eng": "This is my favorite food.",
+  "kor": "이거 제가 제일 좋아하는 음식이에요.",
+  "cat": "음식/맛"
+ },
+ {
+  "id": "p526",
+  "eng": "It's not bad.",
+  "kor": "나쁘지 않네요.",
+  "cat": "음식/맛"
+ },
+ {
+  "id": "p527",
+  "eng": "It's too spicy for me.",
+  "kor": "제겐 너무 매워요.",
+  "cat": "음식/맛"
+ },
+ {
+  "id": "p528",
+  "eng": "Let's get something to eat.",
+  "kor": "뭐 좀 먹으러 가요.",
+  "cat": "음식/맛"
+ },
+ {
+  "id": "p529",
+  "eng": "Taxi! Are you available?",
+  "kor": "택시! 빈 차예요?",
+  "cat": "교통/택시"
+ },
+ {
+  "id": "p530",
+  "eng": "Take me to this address, please.",
+  "kor": "이 주소로 가주세요.",
+  "cat": "교통/택시"
+ },
+ {
+  "id": "p531",
+  "eng": "How much will it cost?",
+  "kor": "얼마나 나올까요?",
+  "cat": "교통/택시"
+ },
+ {
+  "id": "p532",
+  "eng": "Please stop here.",
+  "kor": "여기서 세워주세요.",
+  "cat": "교통/택시"
+ },
+ {
+  "id": "p533",
+  "eng": "Can you drop me off at the corner?",
+  "kor": "모퉁이에서 내려주실래요?",
+  "cat": "교통/택시"
+ },
+ {
+  "id": "p534",
+  "eng": "Could you go a little faster?",
+  "kor": "조금 빨리 가주실 수 있어요?",
+  "cat": "교통/택시"
+ },
+ {
+  "id": "p535",
+  "eng": "I'm in a hurry.",
+  "kor": "좀 급해요.",
+  "cat": "교통/택시"
+ },
+ {
+  "id": "p536",
+  "eng": "Is this the right way?",
+  "kor": "이 길이 맞나요?",
+  "cat": "교통/택시"
+ },
+ {
+  "id": "p537",
+  "eng": "How long will it take to get there?",
+  "kor": "거기까지 얼마나 걸려요?",
+  "cat": "교통/택시"
+ },
+ {
+  "id": "p538",
+  "eng": "Could you turn on the meter?",
+  "kor": "미터기 켜주실래요?",
+  "cat": "교통/택시"
+ },
+ {
+  "id": "p539",
+  "eng": "Please slow down.",
+  "kor": "좀 천천히 가주세요.",
+  "cat": "교통/택시"
+ },
+ {
+  "id": "p540",
+  "eng": "Pull over here, please.",
+  "kor": "여기 세워주세요.",
+  "cat": "교통/택시"
+ },
+ {
+  "id": "p541",
+  "eng": "Can you wait here for a minute?",
+  "kor": "잠깐만 기다려 주실 수 있어요?",
+  "cat": "교통/택시"
+ },
+ {
+  "id": "p542",
+  "eng": "You look great today.",
+  "kor": "오늘 멋져 보여요.",
+  "cat": "칭찬/격려"
+ },
+ {
+  "id": "p543",
+  "eng": "I love your outfit.",
+  "kor": "옷이 정말 예뻐요.",
+  "cat": "칭찬/격려"
+ },
+ {
+  "id": "p544",
+  "eng": "That was impressive.",
+  "kor": "정말 인상적이었어요.",
+  "cat": "칭찬/격려"
+ },
+ {
+  "id": "p545",
+  "eng": "You're so talented.",
+  "kor": "정말 재능 있으세요.",
+  "cat": "칭찬/격려"
+ },
+ {
+  "id": "p546",
+  "eng": "Well done!",
+  "kor": "정말 잘했어요!",
+  "cat": "칭찬/격려"
+ },
+ {
+  "id": "p547",
+  "eng": "Keep up the good work.",
+  "kor": "계속 잘해 봐요.",
+  "cat": "칭찬/격려"
+ },
+ {
+  "id": "p548",
+  "eng": "You can do it.",
+  "kor": "넌 할 수 있어.",
+  "cat": "칭찬/격려"
+ },
+ {
+  "id": "p549",
+  "eng": "I believe in you.",
+  "kor": "난 너를 믿어.",
+  "cat": "칭찬/격려"
+ },
+ {
+  "id": "p550",
+  "eng": "You're a great cook.",
+  "kor": "요리를 정말 잘하시네요.",
+  "cat": "칭찬/격려"
+ },
+ {
+  "id": "p551",
+  "eng": "That's a brilliant idea.",
+  "kor": "정말 멋진 생각이에요.",
+  "cat": "칭찬/격려"
+ },
+ {
+  "id": "p552",
+  "eng": "You made my day.",
+  "kor": "덕분에 기분 좋아졌어요.",
+  "cat": "칭찬/격려"
+ },
+ {
+  "id": "p553",
+  "eng": "You're too kind.",
+  "kor": "너무 친절하시네요.",
+  "cat": "칭찬/격려"
+ },
+ {
+  "id": "p554",
+  "eng": "I'm impressed.",
+  "kor": "감탄했어요.",
+  "cat": "칭찬/격려"
+ },
+ {
+  "id": "p555",
+  "eng": "Nice work!",
+  "kor": "수고했어요!",
+  "cat": "칭찬/격려"
+ },
+ {
+  "id": "p556",
+  "eng": "You nailed it.",
+  "kor": "완벽하게 해냈네요.",
+  "cat": "칭찬/격려"
+ },
+ {
+  "id": "p557",
+  "eng": "Let me think.",
+  "kor": "생각 좀 해볼게요.",
+  "cat": "자주쓰는표현"
+ },
+ {
+  "id": "p558",
+  "eng": "Just a moment.",
+  "kor": "잠깐만요.",
+  "cat": "자주쓰는표현"
+ },
+ {
+  "id": "p559",
+  "eng": "Hold on.",
+  "kor": "잠깐만요.",
+  "cat": "자주쓰는표현"
+ },
+ {
+  "id": "p560",
+  "eng": "Here you go.",
+  "kor": "여기 있어요.",
+  "cat": "자주쓰는표현"
+ },
+ {
+  "id": "p561",
+  "eng": "There you go.",
+  "kor": "자, 됐어요.",
+  "cat": "자주쓰는표현"
+ },
+ {
+  "id": "p562",
+  "eng": "Got it.",
+  "kor": "알겠어요.",
+  "cat": "자주쓰는표현"
+ },
+ {
+  "id": "p563",
+  "eng": "No big deal.",
+  "kor": "별거 아니에요.",
+  "cat": "자주쓰는표현"
+ },
+ {
+  "id": "p564",
+  "eng": "It happens.",
+  "kor": "그럴 수도 있죠.",
+  "cat": "자주쓰는표현"
+ },
+ {
+  "id": "p565",
+  "eng": "Take your time.",
+  "kor": "천천히 하세요.",
+  "cat": "자주쓰는표현"
+ },
+ {
+  "id": "p566",
+  "eng": "Good luck!",
+  "kor": "행운을 빌어요!",
+  "cat": "자주쓰는표현"
+ },
+ {
+  "id": "p567",
+  "eng": "Have fun!",
+  "kor": "즐겁게 보내요!",
+  "cat": "자주쓰는표현"
+ },
+ {
+  "id": "p568",
+  "eng": "Be right back.",
+  "kor": "금방 올게요.",
+  "cat": "자주쓰는표현"
+ },
+ {
+  "id": "p569",
+  "eng": "Let's go.",
+  "kor": "가자.",
+  "cat": "자주쓰는표현"
+ },
+ {
+  "id": "p570",
+  "eng": "Here we go.",
+  "kor": "자, 시작해요.",
+  "cat": "자주쓰는표현"
+ },
+ {
+  "id": "p571",
+  "eng": "Almost there.",
+  "kor": "거의 다 왔어요.",
+  "cat": "자주쓰는표현"
+ },
+ {
+  "id": "p572",
+  "eng": "That's it.",
+  "kor": "바로 그거예요.",
+  "cat": "자주쓰는표현"
+ },
+ {
+  "id": "p573",
+  "eng": "So far so good.",
+  "kor": "지금까지는 좋아요.",
+  "cat": "자주쓰는표현"
+ },
+ {
+  "id": "p574",
+  "eng": "Better late than never.",
+  "kor": "안 하는 것보단 늦게라도 하는 게 낫죠.",
+  "cat": "자주쓰는표현"
+ },
+ {
+  "id": "p575",
+  "eng": "Easy does it.",
+  "kor": "천천히, 조심조심.",
+  "cat": "자주쓰는표현"
+ },
+ {
+  "id": "p576",
+  "eng": "No rush.",
+  "kor": "급할 거 없어요.",
+  "cat": "자주쓰는표현"
+ },
+ {
+  "id": "p577",
+  "eng": "Take it or leave it.",
+  "kor": "하든지 말든지요.",
+  "cat": "자주쓰는표현"
+ },
+ {
+  "id": "p578",
+  "eng": "It's worth a shot.",
+  "kor": "한번 해볼 만해요.",
+  "cat": "자주쓰는표현"
+ },
+ {
+  "id": "p579",
+  "eng": "Let's get started.",
+  "kor": "시작해 봅시다.",
+  "cat": "자주쓰는표현"
+ },
+ {
+  "id": "p580",
+  "eng": "That's all for now.",
+  "kor": "지금은 이게 다예요.",
+  "cat": "자주쓰는표현"
+ },
+ {
+  "id": "p581",
+  "eng": "Can I ask a question?",
+  "kor": "질문해도 돼요?",
+  "cat": "학교/공부"
+ },
+ {
+  "id": "p582",
+  "eng": "I don't get it.",
+  "kor": "이해가 안 돼요.",
+  "cat": "학교/공부"
+ },
+ {
+  "id": "p583",
+  "eng": "Could you explain that again?",
+  "kor": "다시 설명해 주실래요?",
+  "cat": "학교/공부"
+ },
+ {
+  "id": "p584",
+  "eng": "What does this word mean?",
+  "kor": "이 단어 무슨 뜻이에요?",
+  "cat": "학교/공부"
+ },
+ {
+  "id": "p585",
+  "eng": "How do you pronounce this?",
+  "kor": "이거 어떻게 발음해요?",
+  "cat": "학교/공부"
+ },
+ {
+  "id": "p586",
+  "eng": "Can you give an example?",
+  "kor": "예를 들어줄 수 있어요?",
+  "cat": "학교/공부"
+ },
+ {
+  "id": "p587",
+  "eng": "I'm studying for an exam.",
+  "kor": "시험공부 하고 있어요.",
+  "cat": "학교/공부"
+ },
+ {
+  "id": "p588",
+  "eng": "When is the deadline?",
+  "kor": "마감이 언제예요?",
+  "cat": "학교/공부"
+ },
+ {
+  "id": "p589",
+  "eng": "Did you finish your homework?",
+  "kor": "숙제 다 했어요?",
+  "cat": "학교/공부"
+ },
+ {
+  "id": "p590",
+  "eng": "Let's study together.",
+  "kor": "같이 공부하자.",
+  "cat": "학교/공부"
+ },
+ {
+  "id": "p591",
+  "eng": "I have a test tomorrow.",
+  "kor": "내일 시험이 있어요.",
+  "cat": "학교/공부"
+ },
+ {
+  "id": "p592",
+  "eng": "Can I borrow your notes?",
+  "kor": "필기 좀 빌릴 수 있어요?",
+  "cat": "학교/공부"
+ },
+ {
+  "id": "p593",
+  "eng": "I need to focus.",
+  "kor": "집중해야 해요.",
+  "cat": "학교/공부"
+ },
+ {
+  "id": "p594",
+  "eng": "Take good notes.",
+  "kor": "필기 잘 해두세요.",
+  "cat": "학교/공부"
+ },
+ {
+  "id": "p595",
+  "eng": "Practice makes perfect.",
+  "kor": "연습이 완벽을 만들어요.",
+  "cat": "학교/공부"
+ },
+ {
+  "id": "p596",
+  "eng": "I'm not good at math.",
+  "kor": "저는 수학을 잘 못해요.",
+  "cat": "학교/공부"
+ },
+ {
+  "id": "p597",
+  "eng": "Keep practicing.",
+  "kor": "계속 연습하세요.",
+  "cat": "학교/공부"
+ },
+ {
+  "id": "p598",
+  "eng": "You're a fast learner.",
+  "kor": "습득이 빠르시네요.",
+  "cat": "학교/공부"
+ },
+ {
+  "id": "p599",
+  "eng": "Let's review this together.",
+  "kor": "이거 같이 복습하자.",
+  "cat": "학교/공부"
+ },
+ {
+  "id": "p600",
+  "eng": "I learned a lot today.",
+  "kor": "오늘 많이 배웠어요.",
+  "cat": "학교/공부"
+ },
+ {
+  "id": "p601",
+  "eng": "My phone is dead.",
+  "kor": "폰 배터리가 다 됐어요.",
+  "cat": "스마트폰/인터넷"
+ },
+ {
+  "id": "p602",
+  "eng": "Can I charge my phone here?",
+  "kor": "여기서 폰 충전해도 돼요?",
+  "cat": "스마트폰/인터넷"
+ },
+ {
+  "id": "p603",
+  "eng": "Do you have a charger?",
+  "kor": "충전기 있어요?",
+  "cat": "스마트폰/인터넷"
+ },
+ {
+  "id": "p604",
+  "eng": "The Wi-Fi is so slow.",
+  "kor": "와이파이가 너무 느려요.",
+  "cat": "스마트폰/인터넷"
+ },
+ {
+  "id": "p605",
+  "eng": "I can't connect to the internet.",
+  "kor": "인터넷에 연결이 안 돼요.",
+  "cat": "스마트폰/인터넷"
+ },
+ {
+  "id": "p606",
+  "eng": "Could you send me the link?",
+  "kor": "링크 좀 보내줄래요?",
+  "cat": "스마트폰/인터넷"
+ },
+ {
+  "id": "p607",
+  "eng": "Add me on social media.",
+  "kor": "SNS 친구 추가해요.",
+  "cat": "스마트폰/인터넷"
+ },
+ {
+  "id": "p608",
+  "eng": "I'll text you the details.",
+  "kor": "자세한 건 문자로 보낼게요.",
+  "cat": "스마트폰/인터넷"
+ },
+ {
+  "id": "p609",
+  "eng": "My phone froze.",
+  "kor": "폰이 멈췄어요.",
+  "cat": "스마트폰/인터넷"
+ },
+ {
+  "id": "p610",
+  "eng": "Let me Google it.",
+  "kor": "검색해 볼게요.",
+  "cat": "스마트폰/인터넷"
+ },
+ {
+  "id": "p611",
+  "eng": "Did you see my message?",
+  "kor": "제 메시지 봤어요?",
+  "cat": "스마트폰/인터넷"
+ },
+ {
+  "id": "p612",
+  "eng": "Can you turn on your camera?",
+  "kor": "카메라 좀 켜줄래요?",
+  "cat": "스마트폰/인터넷"
+ },
+ {
+  "id": "p613",
+  "eng": "You're on mute.",
+  "kor": "음소거 되어 있어요.",
+  "cat": "스마트폰/인터넷"
+ },
+ {
+  "id": "p614",
+  "eng": "The signal is weak here.",
+  "kor": "여기 신호가 약해요.",
+  "cat": "스마트폰/인터넷"
+ },
+ {
+  "id": "p615",
+  "eng": "I'll share my screen.",
+  "kor": "화면 공유할게요.",
+  "cat": "스마트폰/인터넷"
+ },
+ {
+  "id": "p616",
+  "eng": "Tell me more about it.",
+  "kor": "좀 더 얘기해 줘요.",
+  "cat": "관계/대화이어가기"
+ },
+ {
+  "id": "p617",
+  "eng": "How did it go?",
+  "kor": "어떻게 됐어요?",
+  "cat": "관계/대화이어가기"
+ },
+ {
+  "id": "p618",
+  "eng": "What happened next?",
+  "kor": "그다음엔 어떻게 됐어요?",
+  "cat": "관계/대화이어가기"
+ },
+ {
+  "id": "p619",
+  "eng": "That reminds me of something.",
+  "kor": "그러고 보니 생각났어요.",
+  "cat": "관계/대화이어가기"
+ },
+ {
+  "id": "p620",
+  "eng": "Speaking of which...",
+  "kor": "말 나온 김에...",
+  "cat": "관계/대화이어가기"
+ },
+ {
+  "id": "p621",
+  "eng": "To be honest...",
+  "kor": "솔직히 말하면...",
+  "cat": "관계/대화이어가기"
+ },
+ {
+  "id": "p622",
+  "eng": "If you ask me...",
+  "kor": "내 생각엔...",
+  "cat": "관계/대화이어가기"
+ },
+ {
+  "id": "p623",
+  "eng": "As I was saying...",
+  "kor": "아까 말하던 대로...",
+  "cat": "관계/대화이어가기"
+ },
+ {
+  "id": "p624",
+  "eng": "Let me get this straight.",
+  "kor": "정리 좀 해볼게요.",
+  "cat": "관계/대화이어가기"
+ },
+ {
+  "id": "p625",
+  "eng": "I see where you're coming from.",
+  "kor": "왜 그렇게 생각하는지 알겠어요.",
+  "cat": "관계/대화이어가기"
+ },
+ {
+  "id": "p626",
+  "eng": "Go on, I'm listening.",
+  "kor": "계속해요, 듣고 있어요.",
+  "cat": "관계/대화이어가기"
+ },
+ {
+  "id": "p627",
+  "eng": "That's interesting.",
+  "kor": "흥미롭네요.",
+  "cat": "관계/대화이어가기"
+ },
+ {
+  "id": "p628",
+  "eng": "I had no idea.",
+  "kor": "전혀 몰랐어요.",
+  "cat": "관계/대화이어가기"
+ },
+ {
+  "id": "p629",
+  "eng": "Are you serious?",
+  "kor": "진심이에요?",
+  "cat": "관계/대화이어가기"
+ },
+ {
+  "id": "p630",
+  "eng": "You're kidding!",
+  "kor": "농담이죠!",
+  "cat": "관계/대화이어가기"
+ },
+ {
+  "id": "p631",
+  "eng": "That's a good point.",
+  "kor": "좋은 지적이에요.",
+  "cat": "관계/대화이어가기"
+ },
+ {
+  "id": "p632",
+  "eng": "Let's change the subject.",
+  "kor": "화제를 바꿔요.",
+  "cat": "관계/대화이어가기"
+ },
+ {
+  "id": "p633",
+  "eng": "We'll talk later.",
+  "kor": "나중에 얘기해요.",
+  "cat": "관계/대화이어가기"
+ },
+ {
+  "id": "p634",
+  "eng": "Keep it between us.",
+  "kor": "우리끼리만 알아요.",
+  "cat": "관계/대화이어가기"
+ },
+ {
+  "id": "p635",
+  "eng": "I won't tell anyone.",
+  "kor": "아무한테도 말 안 할게요.",
+  "cat": "관계/대화이어가기"
+ },
+ {
+  "id": "p636",
+  "eng": "I'd like a haircut.",
+  "kor": "머리 자르고 싶어요.",
+  "cat": "미용/서비스"
+ },
+ {
+  "id": "p637",
+  "eng": "Just a trim, please.",
+  "kor": "끝만 살짝 다듬어 주세요.",
+  "cat": "미용/서비스"
+ },
+ {
+  "id": "p638",
+  "eng": "Not too short, please.",
+  "kor": "너무 짧지 않게요.",
+  "cat": "미용/서비스"
+ },
+ {
+  "id": "p639",
+  "eng": "Can you make an appointment?",
+  "kor": "예약할 수 있어요?",
+  "cat": "미용/서비스"
+ },
+ {
+  "id": "p640",
+  "eng": "What time can you fit me in?",
+  "kor": "몇 시에 가능해요?",
+  "cat": "미용/서비스"
+ },
+ {
+  "id": "p641",
+  "eng": "How long is the wait?",
+  "kor": "얼마나 기다려야 해요?",
+  "cat": "미용/서비스"
+ },
+ {
+  "id": "p642",
+  "eng": "I'd like to make a reservation.",
+  "kor": "예약하고 싶어요.",
+  "cat": "미용/서비스"
+ },
+ {
+  "id": "p643",
+  "eng": "Do I need to book in advance?",
+  "kor": "미리 예약해야 하나요?",
+  "cat": "미용/서비스"
+ },
+ {
+  "id": "p644",
+  "eng": "Can I reschedule my appointment?",
+  "kor": "예약을 변경할 수 있어요?",
+  "cat": "미용/서비스"
+ },
+ {
+  "id": "p645",
+  "eng": "How much do I owe you?",
+  "kor": "얼마 드리면 되나요?",
+  "cat": "미용/서비스"
+ },
+ {
+  "id": "p646",
+  "eng": "Do you accept tips?",
+  "kor": "팁 받으세요?",
+  "cat": "미용/서비스"
+ },
+ {
+  "id": "p647",
+  "eng": "That looks perfect, thank you.",
+  "kor": "딱 좋아요, 감사해요.",
+  "cat": "미용/서비스"
+ },
+ {
+  "id": "p648",
+  "eng": "Can you fix this part?",
+  "kor": "이 부분 좀 고쳐줄 수 있어요?",
+  "cat": "미용/서비스"
+ },
+ {
+  "id": "p649",
+  "eng": "I'll come back next month.",
+  "kor": "다음 달에 다시 올게요.",
+  "cat": "미용/서비스"
+ },
+ {
+  "id": "p650",
+  "eng": "Could you recommend a style?",
+  "kor": "스타일 좀 추천해 주실래요?",
+  "cat": "미용/서비스"
+ },
+ {
+  "id": "p651",
+  "eng": "Do you work out?",
+  "kor": "운동하세요?",
+  "cat": "운동/취미"
+ },
+ {
+  "id": "p652",
+  "eng": "I go to the gym every morning.",
+  "kor": "매일 아침 헬스장에 가요.",
+  "cat": "운동/취미"
+ },
+ {
+  "id": "p653",
+  "eng": "Let's go for a walk.",
+  "kor": "산책하러 가요.",
+  "cat": "운동/취미"
+ },
+ {
+  "id": "p654",
+  "eng": "I love watching movies.",
+  "kor": "영화 보는 걸 좋아해요.",
+  "cat": "운동/취미"
+ },
+ {
+  "id": "p655",
+  "eng": "What kind of music do you like?",
+  "kor": "어떤 음악 좋아해요?",
+  "cat": "운동/취미"
+ },
+ {
+  "id": "p656",
+  "eng": "I play the guitar.",
+  "kor": "기타를 쳐요.",
+  "cat": "운동/취미"
+ },
+ {
+  "id": "p657",
+  "eng": "Do you like sports?",
+  "kor": "스포츠 좋아하세요?",
+  "cat": "운동/취미"
+ },
+ {
+  "id": "p658",
+  "eng": "I'm into photography.",
+  "kor": "사진 찍는 데 빠져 있어요.",
+  "cat": "운동/취미"
+ },
+ {
+  "id": "p659",
+  "eng": "Want to join us?",
+  "kor": "같이 할래요?",
+  "cat": "운동/취미"
+ },
+ {
+  "id": "p660",
+  "eng": "That sounds fun.",
+  "kor": "재미있겠네요.",
+  "cat": "운동/취미"
+ },
+ {
+  "id": "p661",
+  "eng": "I need to stay in shape.",
+  "kor": "몸매를 유지해야 해요.",
+  "cat": "운동/취미"
+ },
+ {
+  "id": "p662",
+  "eng": "Let's play soccer this weekend.",
+  "kor": "주말에 축구 하자.",
+  "cat": "운동/취미"
+ },
+ {
+  "id": "p663",
+  "eng": "I'm not very athletic.",
+  "kor": "운동을 잘 못해요.",
+  "cat": "운동/취미"
+ },
+ {
+  "id": "p664",
+  "eng": "I started running lately.",
+  "kor": "요즘 달리기를 시작했어요.",
+  "cat": "운동/취미"
+ },
+ {
+  "id": "p665",
+  "eng": "What do you do in your free time?",
+  "kor": "여가 시간엔 뭐 하세요?",
+  "cat": "운동/취미"
+ },
+ {
+  "id": "p666",
+  "eng": "I can't help it.",
+  "kor": "어쩔 수 없어요.",
+  "cat": "감정표현(추가)"
+ },
+ {
+  "id": "p667",
+  "eng": "I'm dying to know.",
+  "kor": "너무 궁금해요.",
+  "cat": "감정표현(추가)"
+ },
+ {
+  "id": "p668",
+  "eng": "That drives me crazy.",
+  "kor": "그거 정말 짜증나요.",
+  "cat": "감정표현(추가)"
+ },
+ {
+  "id": "p669",
+  "eng": "I'm over the moon.",
+  "kor": "날아갈 듯이 기뻐요.",
+  "cat": "감정표현(추가)"
+ },
+ {
+  "id": "p670",
+  "eng": "My heart is racing.",
+  "kor": "심장이 두근거려요.",
+  "cat": "감정표현(추가)"
+ },
+ {
+  "id": "p671",
+  "eng": "I'm scared.",
+  "kor": "무서워요.",
+  "cat": "감정표현(추가)"
+ },
+ {
+  "id": "p672",
+  "eng": "I'm so embarrassed.",
+  "kor": "너무 창피해요.",
+  "cat": "감정표현(추가)"
+ },
+ {
+  "id": "p673",
+  "eng": "I feel much better now.",
+  "kor": "이제 훨씬 나아요.",
+  "cat": "감정표현(추가)"
+ },
+ {
+  "id": "p674",
+  "eng": "I can't stop laughing.",
+  "kor": "웃음이 멈추질 않아요.",
+  "cat": "감정표현(추가)"
+ },
+ {
+  "id": "p675",
+  "eng": "I'm bored.",
+  "kor": "심심해요.",
+  "cat": "감정표현(추가)"
+ },
+ {
+  "id": "p676",
+  "eng": "I miss you.",
+  "kor": "보고 싶어요.",
+  "cat": "감정표현(추가)"
+ },
+ {
+  "id": "p677",
+  "eng": "I'm grateful to you.",
+  "kor": "당신께 감사해요.",
+  "cat": "감정표현(추가)"
+ },
+ {
+  "id": "p678",
+  "eng": "I'm fed up with this.",
+  "kor": "이거 정말 지긋지긋해요.",
+  "cat": "감정표현(추가)"
+ },
+ {
+  "id": "p679",
+  "eng": "I feel left out.",
+  "kor": "소외감이 들어요.",
+  "cat": "감정표현(추가)"
+ },
+ {
+  "id": "p680",
+  "eng": "It broke my heart.",
+  "kor": "마음이 아팠어요.",
+  "cat": "감정표현(추가)"
+ },
+ {
+  "id": "p681",
+  "eng": "Let's give it a try.",
+  "kor": "한번 해보자.",
+  "cat": "결정/제안"
+ },
+ {
+  "id": "p682",
+  "eng": "How about tomorrow?",
+  "kor": "내일은 어때요?",
+  "cat": "결정/제안"
+ },
+ {
+  "id": "p683",
+  "eng": "Why don't we take a break?",
+  "kor": "좀 쉬는 게 어때요?",
+  "cat": "결정/제안"
+ },
+ {
+  "id": "p684",
+  "eng": "Shall we get going?",
+  "kor": "이제 갈까요?",
+  "cat": "결정/제안"
+ },
+ {
+  "id": "p685",
+  "eng": "Let's call it off.",
+  "kor": "그건 취소하자.",
+  "cat": "결정/제안"
+ },
+ {
+  "id": "p686",
+  "eng": "I'll think it over.",
+  "kor": "곰곰이 생각해 볼게요.",
+  "cat": "결정/제안"
+ },
+ {
+  "id": "p687",
+  "eng": "Let's go with that.",
+  "kor": "그걸로 하죠.",
+  "cat": "결정/제안"
+ },
+ {
+  "id": "p688",
+  "eng": "It's your call.",
+  "kor": "당신이 결정하세요.",
+  "cat": "결정/제안"
+ },
+ {
+  "id": "p689",
+  "eng": "Let's wait and see.",
+  "kor": "일단 지켜보죠.",
+  "cat": "결정/제안"
+ },
+ {
+  "id": "p690",
+  "eng": "We'll figure it out.",
+  "kor": "어떻게든 될 거예요.",
+  "cat": "결정/제안"
+ },
+ {
+  "id": "p691",
+  "eng": "Let's keep our options open.",
+  "kor": "선택지를 열어둡시다.",
+  "cat": "결정/제안"
+ },
+ {
+  "id": "p692",
+  "eng": "How about we split it?",
+  "kor": "나눠서 하는 게 어때요?",
+  "cat": "결정/제안"
+ },
+ {
+  "id": "p693",
+  "eng": "Let's make a decision.",
+  "kor": "결정을 내립시다.",
+  "cat": "결정/제안"
+ },
+ {
+  "id": "p694",
+  "eng": "I'm open to suggestions.",
+  "kor": "제안 환영이에요.",
+  "cat": "결정/제안"
+ },
+ {
+  "id": "p695",
+  "eng": "Let's do it together.",
+  "kor": "같이 하자.",
+  "cat": "결정/제안"
+ },
+ {
+  "id": "p696",
+  "eng": "Excuse me, do you have the time?",
+  "kor": "실례지만 지금 몇 시예요?",
+  "cat": "길거리/도움요청"
+ },
+ {
+  "id": "p697",
+  "eng": "Can you help me find this place?",
+  "kor": "이곳 찾는 것 좀 도와줄래요?",
+  "cat": "길거리/도움요청"
+ },
+ {
+  "id": "p698",
+  "eng": "Is there a convenience store nearby?",
+  "kor": "근처에 편의점 있어요?",
+  "cat": "길거리/도움요청"
+ },
+ {
+  "id": "p699",
+  "eng": "Where can I buy a ticket?",
+  "kor": "표는 어디서 사요?",
+  "cat": "길거리/도움요청"
+ },
+ {
+  "id": "p700",
+  "eng": "Could you take a photo for me?",
+  "kor": "사진 한 장 찍어줄래요?",
+  "cat": "길거리/도움요청"
+ },
+ {
+  "id": "p701",
+  "eng": "Do you know where the exit is?",
+  "kor": "출구가 어딘지 아세요?",
+  "cat": "길거리/도움요청"
+ },
+ {
+  "id": "p702",
+  "eng": "Which floor is it on?",
+  "kor": "몇 층에 있어요?",
+  "cat": "길거리/도움요청"
+ },
+ {
+  "id": "p703",
+  "eng": "Is there an elevator?",
+  "kor": "엘리베이터 있어요?",
+  "cat": "길거리/도움요청"
+ },
+ {
+  "id": "p704",
+  "eng": "Can I use this entrance?",
+  "kor": "이 입구로 들어가도 돼요?",
+  "cat": "길거리/도움요청"
+ },
+ {
+  "id": "p705",
+  "eng": "How do I get back?",
+  "kor": "돌아가려면 어떻게 해요?",
+  "cat": "길거리/도움요청"
+ },
+ {
+  "id": "p706",
+  "eng": "Is it open on Sundays?",
+  "kor": "일요일에 문 열어요?",
+  "cat": "길거리/도움요청"
+ },
+ {
+  "id": "p707",
+  "eng": "What time do you close?",
+  "kor": "몇 시에 닫아요?",
+  "cat": "길거리/도움요청"
+ },
+ {
+  "id": "p708",
+  "eng": "Are you open now?",
+  "kor": "지금 영업하나요?",
+  "cat": "길거리/도움요청"
+ },
+ {
+  "id": "p709",
+  "eng": "Is parking available?",
+  "kor": "주차 가능해요?",
+  "cat": "길거리/도움요청"
+ },
+ {
+  "id": "p710",
+  "eng": "Where can I park?",
+  "kor": "어디에 주차할 수 있어요?",
+  "cat": "길거리/도움요청"
+ },
+ {
+  "id": "p711",
+  "eng": "This is my wife.",
+  "kor": "제 아내예요.",
+  "cat": "가족/사람"
+ },
+ {
+  "id": "p712",
+  "eng": "Let me introduce my friend.",
+  "kor": "제 친구를 소개할게요.",
+  "cat": "가족/사람"
+ },
+ {
+  "id": "p713",
+  "eng": "He's a colleague of mine.",
+  "kor": "제 동료예요.",
+  "cat": "가족/사람"
+ },
+ {
+  "id": "p714",
+  "eng": "We grew up together.",
+  "kor": "우린 같이 자랐어요.",
+  "cat": "가족/사람"
+ },
+ {
+  "id": "p715",
+  "eng": "She takes after her mother.",
+  "kor": "그녀는 엄마를 닮았어요.",
+  "cat": "가족/사람"
+ },
+ {
+  "id": "p716",
+  "eng": "My kids are growing so fast.",
+  "kor": "애들이 정말 빨리 커요.",
+  "cat": "가족/사람"
+ },
+ {
+  "id": "p717",
+  "eng": "How are your parents?",
+  "kor": "부모님은 잘 계세요?",
+  "cat": "가족/사람"
+ },
+ {
+  "id": "p718",
+  "eng": "We're like family.",
+  "kor": "우린 가족 같아요.",
+  "cat": "가족/사람"
+ },
+ {
+  "id": "p719",
+  "eng": "He's my older brother.",
+  "kor": "제 형이에요.",
+  "cat": "가족/사람"
+ },
+ {
+  "id": "p720",
+  "eng": "They're getting married.",
+  "kor": "그들은 결혼해요.",
+  "cat": "가족/사람"
+ },
+ {
+  "id": "p721",
+  "eng": "Do you have any siblings?",
+  "kor": "형제자매 있어요?",
+  "cat": "가족/사람"
+ },
+ {
+  "id": "p722",
+  "eng": "I'm the youngest in my family.",
+  "kor": "저는 막내예요.",
+  "cat": "가족/사람"
+ },
+ {
+  "id": "p723",
+  "eng": "We've known each other for years.",
+  "kor": "우린 안 지 오래됐어요.",
+  "cat": "가족/사람"
+ },
+ {
+  "id": "p724",
+  "eng": "She's a close friend.",
+  "kor": "친한 친구예요.",
+  "cat": "가족/사람"
+ },
+ {
+  "id": "p725",
+  "eng": "Nice to meet your family.",
+  "kor": "가족분들 만나서 반가워요.",
+  "cat": "가족/사람"
+ },
+ {
+  "id": "p726",
+  "eng": "What's the date today?",
+  "kor": "오늘 며칠이에요?",
+  "cat": "시간/일정"
+ },
+ {
+  "id": "p727",
+  "eng": "It's almost noon.",
+  "kor": "거의 정오예요.",
+  "cat": "시간/일정"
+ },
+ {
+  "id": "p728",
+  "eng": "I'll be there on time.",
+  "kor": "제시간에 갈게요.",
+  "cat": "시간/일정"
+ },
+ {
+  "id": "p729",
+  "eng": "We're ahead of schedule.",
+  "kor": "일정보다 빨라요.",
+  "cat": "시간/일정"
+ },
+ {
+  "id": "p730",
+  "eng": "Let's not waste time.",
+  "kor": "시간 낭비하지 맙시다.",
+  "cat": "시간/일정"
+ },
+ {
+  "id": "p731",
+  "eng": "It won't take long.",
+  "kor": "오래 안 걸려요.",
+  "cat": "시간/일정"
+ },
+ {
+  "id": "p732",
+  "eng": "I'm free after lunch.",
+  "kor": "점심 후엔 시간 돼요.",
+  "cat": "시간/일정"
+ },
+ {
+  "id": "p733",
+  "eng": "Can we meet earlier?",
+  "kor": "좀 일찍 만날 수 있어요?",
+  "cat": "시간/일정"
+ },
+ {
+  "id": "p734",
+  "eng": "The meeting is at three.",
+  "kor": "회의는 3시예요.",
+  "cat": "시간/일정"
+ },
+ {
+  "id": "p735",
+  "eng": "I'll be back in an hour.",
+  "kor": "한 시간 뒤에 올게요.",
+  "cat": "시간/일정"
+ },
+ {
+  "id": "p736",
+  "eng": "We're out of time.",
+  "kor": "시간이 없어요.",
+  "cat": "시간/일정"
+ },
+ {
+  "id": "p737",
+  "eng": "Let's start on time.",
+  "kor": "제시간에 시작합시다.",
+  "cat": "시간/일정"
+ },
+ {
+  "id": "p738",
+  "eng": "I overslept this morning.",
+  "kor": "오늘 아침 늦잠 잤어요.",
+  "cat": "시간/일정"
+ },
+ {
+  "id": "p739",
+  "eng": "Set the alarm for seven.",
+  "kor": "7시에 알람 맞춰요.",
+  "cat": "시간/일정"
+ },
+ {
+  "id": "p740",
+  "eng": "Tell me about yourself.",
+  "kor": "자기소개 해보세요.",
+  "cat": "면접/취업"
+ },
+ {
+  "id": "p741",
+  "eng": "Why do you want this job?",
+  "kor": "왜 이 일을 하고 싶으세요?",
+  "cat": "면접/취업"
+ },
+ {
+  "id": "p742",
+  "eng": "What are your strengths?",
+  "kor": "장점이 뭐예요?",
+  "cat": "면접/취업"
+ },
+ {
+  "id": "p743",
+  "eng": "What are your weaknesses?",
+  "kor": "단점이 뭐예요?",
+  "cat": "면접/취업"
+ },
+ {
+  "id": "p744",
+  "eng": "Where do you see yourself in five years?",
+  "kor": "5년 후 자신의 모습은요?",
+  "cat": "면접/취업"
+ },
+ {
+  "id": "p745",
+  "eng": "I have three years of experience.",
+  "kor": "3년 경력이 있어요.",
+  "cat": "면접/취업"
+ },
+ {
+  "id": "p746",
+  "eng": "I'm a hard worker.",
+  "kor": "저는 성실해요.",
+  "cat": "면접/취업"
+ },
+ {
+  "id": "p747",
+  "eng": "I work well in a team.",
+  "kor": "팀워크가 좋아요.",
+  "cat": "면접/취업"
+ },
+ {
+  "id": "p748",
+  "eng": "When can you start?",
+  "kor": "언제 시작할 수 있어요?",
+  "cat": "면접/취업"
+ },
+ {
+  "id": "p749",
+  "eng": "Do you have any questions for us?",
+  "kor": "저희에게 질문 있으세요?",
+  "cat": "면접/취업"
+ },
+ {
+  "id": "p750",
+  "eng": "Thank you for your time.",
+  "kor": "시간 내주셔서 감사합니다.",
+  "cat": "면접/취업"
+ },
+ {
+  "id": "p751",
+  "eng": "I look forward to hearing from you.",
+  "kor": "연락 기다리겠습니다.",
+  "cat": "면접/취업"
+ },
+ {
+  "id": "p752",
+  "eng": "I'm passionate about this field.",
+  "kor": "이 분야에 열정이 있어요.",
+  "cat": "면접/취업"
+ },
+ {
+  "id": "p753",
+  "eng": "I'm a quick learner.",
+  "kor": "배우는 게 빨라요.",
+  "cat": "면접/취업"
+ },
+ {
+  "id": "p754",
+  "eng": "It's a pleasure to be here.",
+  "kor": "여기 오게 되어 기뻐요.",
+  "cat": "면접/취업"
+ },
+ {
+  "id": "p755",
+  "eng": "Let's get down to business.",
+  "kor": "본론으로 들어갑시다.",
+  "cat": "비즈니스(추가)"
+ },
+ {
+  "id": "p756",
+  "eng": "Could you clarify that?",
+  "kor": "그것 좀 명확히 해주실래요?",
+  "cat": "비즈니스(추가)"
+ },
+ {
+  "id": "p757",
+  "eng": "Let me summarize.",
+  "kor": "요약해 볼게요.",
+  "cat": "비즈니스(추가)"
+ },
+ {
+  "id": "p758",
+  "eng": "That's a great point.",
+  "kor": "아주 좋은 지적이에요.",
+  "cat": "비즈니스(추가)"
+ },
+ {
+  "id": "p759",
+  "eng": "Let's move on to the next item.",
+  "kor": "다음 안건으로 넘어갑시다.",
+  "cat": "비즈니스(추가)"
+ },
+ {
+  "id": "p760",
+  "eng": "Can we put that on the agenda?",
+  "kor": "그걸 안건에 올릴 수 있을까요?",
+  "cat": "비즈니스(추가)"
+ },
+ {
+  "id": "p761",
+  "eng": "I'll send the minutes later.",
+  "kor": "회의록을 나중에 보낼게요.",
+  "cat": "비즈니스(추가)"
+ },
+ {
+  "id": "p762",
+  "eng": "Let's stay on topic.",
+  "kor": "주제에서 벗어나지 맙시다.",
+  "cat": "비즈니스(추가)"
+ },
+ {
+  "id": "p763",
+  "eng": "We're running out of time.",
+  "kor": "시간이 부족해요.",
+  "cat": "비즈니스(추가)"
+ },
+ {
+  "id": "p764",
+  "eng": "Any other questions?",
+  "kor": "다른 질문 있나요?",
+  "cat": "비즈니스(추가)"
+ },
+ {
+  "id": "p765",
+  "eng": "Let's vote on it.",
+  "kor": "투표로 결정합시다.",
+  "cat": "비즈니스(추가)"
+ },
+ {
+  "id": "p766",
+  "eng": "I'll defer to your judgment.",
+  "kor": "당신 판단에 맡길게요.",
+  "cat": "비즈니스(추가)"
+ },
+ {
+  "id": "p767",
+  "eng": "Let's take this offline.",
+  "kor": "이건 따로 얘기하죠.",
+  "cat": "비즈니스(추가)"
+ },
+ {
+  "id": "p768",
+  "eng": "We need to make a decision.",
+  "kor": "결정을 내려야 해요.",
+  "cat": "비즈니스(추가)"
+ },
+ {
+  "id": "p769",
+  "eng": "Let's reconvene tomorrow.",
+  "kor": "내일 다시 모입시다.",
+  "cat": "비즈니스(추가)"
+ },
+ {
+  "id": "p770",
+  "eng": "How would you like to pay?",
+  "kor": "어떻게 결제하시겠어요?",
+  "cat": "돈/지불"
+ },
+ {
+  "id": "p771",
+  "eng": "Cash or card?",
+  "kor": "현금이요, 카드요?",
+  "cat": "돈/지불"
+ },
+ {
+  "id": "p772",
+  "eng": "Can I get the receipt?",
+  "kor": "영수증 받을 수 있어요?",
+  "cat": "돈/지불"
+ },
+ {
+  "id": "p773",
+  "eng": "There's a service charge.",
+  "kor": "봉사료가 있어요.",
+  "cat": "돈/지불"
+ },
+ {
+  "id": "p774",
+  "eng": "It's on the house.",
+  "kor": "서비스예요.",
+  "cat": "돈/지불"
+ },
+ {
+  "id": "p775",
+  "eng": "Let me treat you.",
+  "kor": "제가 대접할게요.",
+  "cat": "돈/지불"
+ },
+ {
+  "id": "p776",
+  "eng": "We'll go Dutch.",
+  "kor": "각자 내요.",
+  "cat": "돈/지불"
+ },
+ {
+  "id": "p777",
+  "eng": "Can I get a discount?",
+  "kor": "할인 되나요?",
+  "cat": "돈/지불"
+ },
+ {
+  "id": "p778",
+  "eng": "That's a great deal.",
+  "kor": "정말 싸네요.",
+  "cat": "돈/지불"
+ },
+ {
+  "id": "p779",
+  "eng": "It's a rip-off.",
+  "kor": "바가지네요.",
+  "cat": "돈/지불"
+ },
+ {
+  "id": "p780",
+  "eng": "I'm on a tight budget.",
+  "kor": "예산이 빠듯해요.",
+  "cat": "돈/지불"
+ },
+ {
+  "id": "p781",
+  "eng": "Can I pay in installments?",
+  "kor": "할부로 낼 수 있어요?",
+  "cat": "돈/지불"
+ },
+ {
+  "id": "p782",
+  "eng": "Do you have change for this?",
+  "kor": "이거 잔돈 있어요?",
+  "cat": "돈/지불"
+ },
+ {
+  "id": "p783",
+  "eng": "The total comes to fifty dollars.",
+  "kor": "총 50달러예요.",
+  "cat": "돈/지불"
+ },
+ {
+  "id": "p784",
+  "eng": "I'll pay you back tomorrow.",
+  "kor": "내일 갚을게요.",
+  "cat": "돈/지불"
+ },
+ {
+  "id": "p785",
+  "eng": "Are you new to the neighborhood?",
+  "kor": "이 동네 새로 오셨어요?",
+  "cat": "동네/이웃"
+ },
+ {
+  "id": "p786",
+  "eng": "Welcome to the building.",
+  "kor": "이 건물에 오신 걸 환영해요.",
+  "cat": "동네/이웃"
+ },
+ {
+  "id": "p787",
+  "eng": "Could you keep it down, please?",
+  "kor": "소리 좀 줄여주실래요?",
+  "cat": "동네/이웃"
+ },
+ {
+  "id": "p788",
+  "eng": "Sorry for the noise.",
+  "kor": "시끄럽게 해서 죄송해요.",
+  "cat": "동네/이웃"
+ },
+ {
+  "id": "p789",
+  "eng": "Is there a good place to eat around here?",
+  "kor": "근처에 맛있는 데 있어요?",
+  "cat": "동네/이웃"
+ },
+ {
+  "id": "p790",
+  "eng": "The neighbors are friendly.",
+  "kor": "이웃들이 친절해요.",
+  "cat": "동네/이웃"
+ },
+ {
+  "id": "p791",
+  "eng": "Can I borrow some sugar?",
+  "kor": "설탕 좀 빌릴 수 있어요?",
+  "cat": "동네/이웃"
+ },
+ {
+  "id": "p792",
+  "eng": "I'll watch your place while you're away.",
+  "kor": "집 비울 동안 봐 줄게요.",
+  "cat": "동네/이웃"
+ },
+ {
+  "id": "p793",
+  "eng": "Let's hang out sometime.",
+  "kor": "언제 같이 놀아요.",
+  "cat": "동네/이웃"
+ },
+ {
+  "id": "p794",
+  "eng": "Do you live around here?",
+  "kor": "이 근처 사세요?",
+  "cat": "동네/이웃"
+ },
+ {
+  "id": "p795",
+  "eng": "How long have you lived here?",
+  "kor": "여기 산 지 얼마나 됐어요?",
+  "cat": "동네/이웃"
+ },
+ {
+  "id": "p796",
+  "eng": "It's a quiet neighborhood.",
+  "kor": "조용한 동네예요.",
+  "cat": "동네/이웃"
+ },
+ {
+  "id": "p797",
+  "eng": "Take care of yourself.",
+  "kor": "건강 챙기세요.",
+  "cat": "동네/이웃"
+ },
+ {
+  "id": "p798",
+  "eng": "See you around.",
+  "kor": "또 봐요.",
+  "cat": "동네/이웃"
+ },
+ {
+  "id": "p799",
+  "eng": "Have you seen this movie?",
+  "kor": "이 영화 봤어요?",
+  "cat": "영화/여가"
+ },
+ {
+  "id": "p800",
+  "eng": "What's it about?",
+  "kor": "무슨 내용이에요?",
+  "cat": "영화/여가"
+ },
+ {
+  "id": "p801",
+  "eng": "It got great reviews.",
+  "kor": "평이 아주 좋아요.",
+  "cat": "영화/여가"
+ },
+ {
+  "id": "p802",
+  "eng": "Let's watch a movie tonight.",
+  "kor": "오늘 밤 영화 보자.",
+  "cat": "영화/여가"
+ },
+ {
+  "id": "p803",
+  "eng": "I'd rather stay in.",
+  "kor": "그냥 집에 있을래요.",
+  "cat": "영화/여가"
+ },
+ {
+  "id": "p804",
+  "eng": "What's playing now?",
+  "kor": "지금 뭐 상영해요?",
+  "cat": "영화/여가"
+ },
+ {
+  "id": "p805",
+  "eng": "Two tickets, please.",
+  "kor": "표 두 장 주세요.",
+  "cat": "영화/여가"
+ },
+ {
+  "id": "p806",
+  "eng": "What time does it start?",
+  "kor": "몇 시에 시작해요?",
+  "cat": "영화/여가"
+ },
+ {
+  "id": "p807",
+  "eng": "I love this song.",
+  "kor": "이 노래 정말 좋아요.",
+  "cat": "영화/여가"
+ },
+ {
+  "id": "p808",
+  "eng": "Turn up the volume.",
+  "kor": "소리 좀 키워요.",
+  "cat": "영화/여가"
+ },
+ {
+  "id": "p809",
+  "eng": "Let's binge-watch a series.",
+  "kor": "드라마 몰아보자.",
+  "cat": "영화/여가"
+ },
+ {
+  "id": "p810",
+  "eng": "It was a bit boring.",
+  "kor": "좀 지루했어요.",
+  "cat": "영화/여가"
+ },
+ {
+  "id": "p811",
+  "eng": "The ending was a surprise.",
+  "kor": "결말이 의외였어요.",
+  "cat": "영화/여가"
+ },
+ {
+  "id": "p812",
+  "eng": "I can't wait for the sequel.",
+  "kor": "속편이 너무 기대돼요.",
+  "cat": "영화/여가"
+ },
+ {
+  "id": "p813",
+  "eng": "Let's grab popcorn.",
+  "kor": "팝콘 사 가자.",
+  "cat": "영화/여가"
+ },
+ {
+  "id": "p814",
+  "eng": "Did you say five o'clock?",
+  "kor": "5시라고 하셨어요?",
+  "cat": "확인/되묻기"
+ },
+ {
+  "id": "p815",
+  "eng": "Let me make sure I understand.",
+  "kor": "제가 제대로 이해했는지 확인할게요.",
+  "cat": "확인/되묻기"
+ },
+ {
+  "id": "p816",
+  "eng": "So you mean...?",
+  "kor": "그러니까 ...라는 거죠?",
+  "cat": "확인/되묻기"
+ },
+ {
+  "id": "p817",
+  "eng": "Is that correct?",
+  "kor": "맞나요?",
+  "cat": "확인/되묻기"
+ },
+ {
+  "id": "p818",
+  "eng": "Could you confirm that?",
+  "kor": "확인해 주실래요?",
+  "cat": "확인/되묻기"
+ },
+ {
+  "id": "p819",
+  "eng": "Just to be sure...",
+  "kor": "혹시 몰라서 그런데...",
+  "cat": "확인/되묻기"
+ },
+ {
+  "id": "p820",
+  "eng": "Am I right?",
+  "kor": "제 말이 맞죠?",
+  "cat": "확인/되묻기"
+ },
+ {
+  "id": "p821",
+  "eng": "What did you mean by that?",
+  "kor": "그게 무슨 뜻이었어요?",
+  "cat": "확인/되묻기"
+ },
+ {
+  "id": "p822",
+  "eng": "Are you sure about that?",
+  "kor": "그거 확실해요?",
+  "cat": "확인/되묻기"
+ },
+ {
+  "id": "p823",
+  "eng": "Let me double-check.",
+  "kor": "다시 한번 확인할게요.",
+  "cat": "확인/되묻기"
+ },
+ {
+  "id": "p824",
+  "eng": "Did I get that right?",
+  "kor": "제가 맞게 들었나요?",
+  "cat": "확인/되묻기"
+ },
+ {
+  "id": "p825",
+  "eng": "Can you confirm the time?",
+  "kor": "시간 좀 확인해 줄래요?",
+  "cat": "확인/되묻기"
+ },
+ {
+  "id": "p826",
+  "eng": "So we're meeting at noon?",
+  "kor": "그럼 정오에 만나는 거죠?",
+  "cat": "확인/되묻기"
+ },
+ {
+  "id": "p827",
+  "eng": "Is everything set?",
+  "kor": "다 준비됐어요?",
+  "cat": "확인/되묻기"
+ },
+ {
+  "id": "p828",
+  "eng": "Are we good to go?",
+  "kor": "이제 출발해도 돼요?",
+  "cat": "확인/되묻기"
+ },
+ {
+  "id": "p829",
+  "eng": "Could you recommend a good restaurant?",
+  "kor": "좋은 식당 추천해 줄래요?",
+  "cat": "여행(추가)"
+ },
+ {
+  "id": "p830",
+  "eng": "What's there to do around here?",
+  "kor": "이 근처에 뭐 할 게 있어요?",
+  "cat": "여행(추가)"
+ },
+ {
+  "id": "p831",
+  "eng": "Is it worth visiting?",
+  "kor": "가볼 만한가요?",
+  "cat": "여행(추가)"
+ },
+ {
+  "id": "p832",
+  "eng": "How do I buy a metro card?",
+  "kor": "지하철 카드는 어떻게 사요?",
+  "cat": "여행(추가)"
+ },
+ {
+  "id": "p833",
+  "eng": "Does this train stop at the museum?",
+  "kor": "이 기차 박물관에 서나요?",
+  "cat": "여행(추가)"
+ },
+ {
+  "id": "p834",
+  "eng": "I'd like to extend my stay.",
+  "kor": "숙박을 연장하고 싶어요.",
+  "cat": "여행(추가)"
+ },
+ {
+  "id": "p835",
+  "eng": "Can I check out late?",
+  "kor": "늦게 체크아웃해도 돼요?",
+  "cat": "여행(추가)"
+ },
+ {
+  "id": "p836",
+  "eng": "Where can I store my luggage?",
+  "kor": "짐을 어디에 보관할 수 있어요?",
+  "cat": "여행(추가)"
+ },
+ {
+  "id": "p837",
+  "eng": "Is the tap water safe to drink?",
+  "kor": "수돗물 마셔도 돼요?",
+  "cat": "여행(추가)"
+ },
+ {
+  "id": "p838",
+  "eng": "What's the local specialty?",
+  "kor": "이 지역 명물이 뭐예요?",
+  "cat": "여행(추가)"
+ },
+ {
+  "id": "p839",
+  "eng": "Are there any tours available?",
+  "kor": "투어 있나요?",
+  "cat": "여행(추가)"
+ },
+ {
+  "id": "p840",
+  "eng": "How much is the entrance fee?",
+  "kor": "입장료가 얼마예요?",
+  "cat": "여행(추가)"
+ },
+ {
+  "id": "p841",
+  "eng": "Do you have a guide in English?",
+  "kor": "영어 가이드 있어요?",
+  "cat": "여행(추가)"
+ },
+ {
+  "id": "p842",
+  "eng": "What time does it open?",
+  "kor": "몇 시에 문 열어요?",
+  "cat": "여행(추가)"
+ },
+ {
+  "id": "p843",
+  "eng": "Is photography allowed?",
+  "kor": "사진 찍어도 돼요?",
+  "cat": "여행(추가)"
+ },
+ {
+  "id": "p844",
+  "eng": "Could we sit by the window?",
+  "kor": "창가 자리에 앉을 수 있어요?",
+  "cat": "식당(추가)"
+ },
+ {
+  "id": "p845",
+  "eng": "Is this table available?",
+  "kor": "이 자리 비어 있어요?",
+  "cat": "식당(추가)"
+ },
+ {
+  "id": "p846",
+  "eng": "We're not ready to order yet.",
+  "kor": "아직 주문 준비 안 됐어요.",
+  "cat": "식당(추가)"
+ },
+ {
+  "id": "p847",
+  "eng": "What's good here?",
+  "kor": "여기 뭐가 맛있어요?",
+  "cat": "식당(추가)"
+ },
+ {
+  "id": "p848",
+  "eng": "I'll have what she's having.",
+  "kor": "저분과 같은 걸로 할게요.",
+  "cat": "식당(추가)"
+ },
+ {
+  "id": "p849",
+  "eng": "Could I get a glass of water?",
+  "kor": "물 한 잔 주실래요?",
+  "cat": "식당(추가)"
+ },
+ {
+  "id": "p850",
+  "eng": "Is it possible to make it less spicy?",
+  "kor": "덜 맵게 해주실 수 있어요?",
+  "cat": "식당(추가)"
+ },
+ {
+  "id": "p851",
+  "eng": "Could we get some bread?",
+  "kor": "빵 좀 주실래요?",
+  "cat": "식당(추가)"
+ },
+ {
+  "id": "p852",
+  "eng": "Do you have a kids' menu?",
+  "kor": "아동 메뉴 있어요?",
+  "cat": "식당(추가)"
+ },
+ {
+  "id": "p853",
+  "eng": "Can I change my order?",
+  "kor": "주문 바꿔도 돼요?",
+  "cat": "식당(추가)"
+ },
+ {
+  "id": "p854",
+  "eng": "Could you box this up?",
+  "kor": "이거 포장해 주실래요?",
+  "cat": "식당(추가)"
+ },
+ {
+  "id": "p855",
+  "eng": "The check, please.",
+  "kor": "계산서 주세요.",
+  "cat": "식당(추가)"
+ },
+ {
+  "id": "p856",
+  "eng": "Is the tip included?",
+  "kor": "팁이 포함됐나요?",
+  "cat": "식당(추가)"
+ },
+ {
+  "id": "p857",
+  "eng": "Thank you, it was lovely.",
+  "kor": "감사해요, 정말 좋았어요.",
+  "cat": "식당(추가)"
+ },
+ {
+  "id": "p858",
+  "eng": "Would you do me a big favor?",
+  "kor": "큰 부탁 하나 들어줄래요?",
+  "cat": "부탁(추가)"
+ },
+ {
+  "id": "p859",
+  "eng": "Can you keep an eye on my bag?",
+  "kor": "제 가방 좀 봐줄래요?",
+  "cat": "부탁(추가)"
+ },
+ {
+  "id": "p860",
+  "eng": "Could you lend me a pen?",
+  "kor": "펜 좀 빌려줄래요?",
+  "cat": "부탁(추가)"
+ },
+ {
+  "id": "p861",
+  "eng": "Can you give me a ride?",
+  "kor": "좀 태워줄 수 있어요?",
+  "cat": "부탁(추가)"
+ },
+ {
+  "id": "p862",
+  "eng": "Would you mind waiting a moment?",
+  "kor": "잠깐 기다려 주실래요?",
+  "cat": "부탁(추가)"
+ },
+ {
+  "id": "p863",
+  "eng": "Can you turn that down a bit?",
+  "kor": "그거 좀 줄여줄래요?",
+  "cat": "부탁(추가)"
+ },
+ {
+  "id": "p864",
+  "eng": "Could you move over a little?",
+  "kor": "조금만 옆으로 가주실래요?",
+  "cat": "부탁(추가)"
+ },
+ {
+  "id": "p865",
+  "eng": "Can you save my seat?",
+  "kor": "자리 좀 맡아줄래요?",
+  "cat": "부탁(추가)"
+ },
+ {
+  "id": "p866",
+  "eng": "Would you mind closing the door?",
+  "kor": "문 좀 닫아주실래요?",
+  "cat": "부탁(추가)"
+ },
+ {
+  "id": "p867",
+  "eng": "Can you reach that for me?",
+  "kor": "저거 좀 집어줄래요?",
+  "cat": "부탁(추가)"
+ },
+ {
+  "id": "p868",
+  "eng": "Could you keep this a secret?",
+  "kor": "이거 비밀로 해줄래요?",
+  "cat": "부탁(추가)"
+ },
+ {
+  "id": "p869",
+  "eng": "Can you remind me later?",
+  "kor": "나중에 알려줄래요?",
+  "cat": "부탁(추가)"
+ },
+ {
+  "id": "p870",
+  "eng": "Would you check this for me?",
+  "kor": "이거 좀 확인해 줄래요?",
+  "cat": "부탁(추가)"
+ },
+ {
+  "id": "p871",
+  "eng": "Could you wait for me?",
+  "kor": "저 좀 기다려 줄래요?",
+  "cat": "부탁(추가)"
+ },
+ {
+  "id": "p872",
+  "eng": "Can you do it by tomorrow?",
+  "kor": "내일까지 해줄 수 있어요?",
+  "cat": "부탁(추가)"
+ },
+ {
+  "id": "p873",
+  "eng": "It's an honor to meet you.",
+  "kor": "만나뵙게 되어 영광입니다.",
+  "cat": "격식/정중"
+ },
+ {
+  "id": "p874",
+  "eng": "Thank you for having me.",
+  "kor": "초대해 주셔서 감사합니다.",
+  "cat": "격식/정중"
+ },
+ {
+  "id": "p875",
+  "eng": "I appreciate your time.",
+  "kor": "시간 내주셔서 감사합니다.",
+  "cat": "격식/정중"
+ },
+ {
+  "id": "p876",
+  "eng": "Please accept my apologies.",
+  "kor": "사과드립니다.",
+  "cat": "격식/정중"
+ },
+ {
+  "id": "p877",
+  "eng": "I'm afraid I have to decline.",
+  "kor": "죄송하지만 사양하겠습니다.",
+  "cat": "격식/정중"
+ },
+ {
+  "id": "p878",
+  "eng": "With all due respect...",
+  "kor": "외람되지만...",
+  "cat": "격식/정중"
+ },
+ {
+  "id": "p879",
+  "eng": "I'd be honored to.",
+  "kor": "기꺼이 하겠습니다.",
+  "cat": "격식/정중"
+ },
+ {
+  "id": "p880",
+  "eng": "Allow me to introduce myself.",
+  "kor": "제 소개를 드리겠습니다.",
+  "cat": "격식/정중"
+ },
+ {
+  "id": "p881",
+  "eng": "It was a pleasure doing business.",
+  "kor": "함께 일하게 되어 기뻤습니다.",
+  "cat": "격식/정중"
+ },
+ {
+  "id": "p882",
+  "eng": "Thank you for your consideration.",
+  "kor": "고려해 주셔서 감사합니다.",
+  "cat": "격식/정중"
+ },
+ {
+  "id": "p883",
+  "eng": "I look forward to working with you.",
+  "kor": "함께 일하길 기대합니다.",
+  "cat": "격식/정중"
+ },
+ {
+  "id": "p884",
+  "eng": "Please let me know if you have concerns.",
+  "kor": "우려되는 점 있으면 알려주세요.",
+  "cat": "격식/정중"
+ },
+ {
+  "id": "p885",
+  "eng": "I'm grateful for the opportunity.",
+  "kor": "기회를 주셔서 감사합니다.",
+  "cat": "격식/정중"
+ },
+ {
+  "id": "p886",
+  "eng": "It would be my pleasure.",
+  "kor": "제가 기꺼이 하겠습니다.",
+  "cat": "격식/정중"
+ },
+ {
+  "id": "p887",
+  "eng": "Thank you for your patience.",
+  "kor": "기다려 주셔서 감사합니다.",
+  "cat": "격식/정중"
+ },
+ {
+  "id": "p888",
+  "eng": "Bundle up, it's cold.",
+  "kor": "따뜻하게 입어요, 추워요.",
+  "cat": "날씨/계절(추가)"
+ },
+ {
+  "id": "p889",
+  "eng": "Stay cool in this heat.",
+  "kor": "이 더위에 시원하게 지내요.",
+  "cat": "날씨/계절(추가)"
+ },
+ {
+  "id": "p890",
+  "eng": "The leaves are changing.",
+  "kor": "단풍이 들고 있어요.",
+  "cat": "날씨/계절(추가)"
+ },
+ {
+  "id": "p891",
+  "eng": "It's perfect weather for a picnic.",
+  "kor": "소풍 가기 딱 좋은 날씨예요.",
+  "cat": "날씨/계절(추가)"
+ },
+ {
+  "id": "p892",
+  "eng": "Looks like a storm is coming.",
+  "kor": "폭풍이 올 것 같아요.",
+  "cat": "날씨/계절(추가)"
+ },
+ {
+  "id": "p893",
+  "eng": "The roads are icy.",
+  "kor": "길이 얼었어요.",
+  "cat": "날씨/계절(추가)"
+ },
+ {
+  "id": "p894",
+  "eng": "It cleared up nicely.",
+  "kor": "날이 활짝 갰어요.",
+  "cat": "날씨/계절(추가)"
+ },
+ {
+  "id": "p895",
+  "eng": "It's been raining all week.",
+  "kor": "일주일 내내 비가 왔어요.",
+  "cat": "날씨/계절(추가)"
+ },
+ {
+  "id": "p896",
+  "eng": "I hope it doesn't rain tomorrow.",
+  "kor": "내일 비 안 오면 좋겠어요.",
+  "cat": "날씨/계절(추가)"
+ },
+ {
+  "id": "p897",
+  "eng": "Summer is just around the corner.",
+  "kor": "여름이 코앞이에요.",
+  "cat": "날씨/계절(추가)"
+ },
+ {
+  "id": "p898",
+  "eng": "Happy birthday!",
+  "kor": "생일 축하해요!",
+  "cat": "축하/인사(추가)"
+ },
+ {
+  "id": "p899",
+  "eng": "Congratulations on your wedding!",
+  "kor": "결혼 축하해요!",
+  "cat": "축하/인사(추가)"
+ },
+ {
+  "id": "p900",
+  "eng": "Happy New Year!",
+  "kor": "새해 복 많이 받으세요!",
+  "cat": "축하/인사(추가)"
+ },
+ {
+  "id": "p901",
+  "eng": "Merry Christmas!",
+  "kor": "메리 크리스마스!",
+  "cat": "축하/인사(추가)"
+ },
+ {
+  "id": "p902",
+  "eng": "Congrats on the new job!",
+  "kor": "새 직장 축하해요!",
+  "cat": "축하/인사(추가)"
+ },
+ {
+  "id": "p903",
+  "eng": "Well deserved!",
+  "kor": "받을 만했어요!",
+  "cat": "축하/인사(추가)"
+ },
+ {
+  "id": "p904",
+  "eng": "Here's to you!",
+  "kor": "당신을 위하여!",
+  "cat": "축하/인사(추가)"
+ },
+ {
+  "id": "p905",
+  "eng": "Best wishes to you both.",
+  "kor": "두 분께 행복을 빌어요.",
+  "cat": "축하/인사(추가)"
+ },
+ {
+  "id": "p906",
+  "eng": "Wishing you all the best.",
+  "kor": "모든 일이 잘되길 바라요.",
+  "cat": "축하/인사(추가)"
+ },
+ {
+  "id": "p907",
+  "eng": "May all your dreams come true.",
+  "kor": "꿈이 다 이루어지길 바라요.",
+  "cat": "축하/인사(추가)"
+ },
+ {
+  "id": "p908",
+  "eng": "Let's get up early tomorrow.",
+  "kor": "내일 일찍 일어나자.",
+  "cat": "일상행동"
+ },
+ {
+  "id": "p909",
+  "eng": "I need to brush my teeth.",
+  "kor": "이 닦아야 해요.",
+  "cat": "일상행동"
+ },
+ {
+  "id": "p910",
+  "eng": "Don't forget to lock up.",
+  "kor": "문 잠그는 거 잊지 마요.",
+  "cat": "일상행동"
+ },
+ {
+  "id": "p911",
+  "eng": "Turn off the stove.",
+  "kor": "가스레인지 꺼요.",
+  "cat": "일상행동"
+ },
+ {
+  "id": "p912",
+  "eng": "I'll take a quick shower.",
+  "kor": "샤워 빨리 하고 올게요.",
+  "cat": "일상행동"
+ },
+ {
+  "id": "p913",
+  "eng": "Let's clean up a bit.",
+  "kor": "좀 치우자.",
+  "cat": "일상행동"
+ },
+ {
+  "id": "p914",
+  "eng": "Hang up your coat.",
+  "kor": "코트 걸어요.",
+  "cat": "일상행동"
+ },
+ {
+  "id": "p915",
+  "eng": "Put your shoes on.",
+  "kor": "신발 신어요.",
+  "cat": "일상행동"
+ },
+ {
+  "id": "p916",
+  "eng": "Buckle up.",
+  "kor": "안전벨트 매요.",
+  "cat": "일상행동"
+ },
+ {
+  "id": "p917",
+  "eng": "Let's get going.",
+  "kor": "이제 가자.",
+  "cat": "일상행동"
+ },
+ {
+  "id": "p918",
+  "eng": "Wait for me.",
+  "kor": "나 좀 기다려요.",
+  "cat": "일상행동"
+ },
+ {
+  "id": "p919",
+  "eng": "Slow down a bit.",
+  "kor": "좀 천천히 가요.",
+  "cat": "일상행동"
+ },
+ {
+  "id": "p920",
+  "eng": "Watch your step.",
+  "kor": "발밑 조심해요.",
+  "cat": "일상행동"
+ },
+ {
+  "id": "p921",
+  "eng": "Hold the door, please.",
+  "kor": "문 좀 잡아주세요.",
+  "cat": "일상행동"
+ },
+ {
+  "id": "p922",
+  "eng": "Move over a little.",
+  "kor": "조금만 비켜줘요.",
+  "cat": "일상행동"
+ },
+ {
+  "id": "p923",
+  "eng": "How do you say this in English?",
+  "kor": "이거 영어로 어떻게 말해요?",
+  "cat": "의사소통보조"
+ },
+ {
+  "id": "p924",
+  "eng": "What's this called in English?",
+  "kor": "이거 영어로 뭐라고 해요?",
+  "cat": "의사소통보조"
+ },
+ {
+  "id": "p925",
+  "eng": "Sorry, my English isn't great.",
+  "kor": "죄송해요, 영어를 잘 못해요.",
+  "cat": "의사소통보조"
+ },
+ {
+  "id": "p926",
+  "eng": "Could you write it down for me?",
+  "kor": "좀 적어주실래요?",
+  "cat": "의사소통보조"
+ },
+ {
+  "id": "p927",
+  "eng": "Please speak a little louder.",
+  "kor": "조금 크게 말해주세요.",
+  "cat": "의사소통보조"
+ },
+ {
+  "id": "p928",
+  "eng": "I didn't understand. Sorry.",
+  "kor": "이해 못 했어요, 죄송해요.",
+  "cat": "의사소통보조"
+ },
+ {
+  "id": "p929",
+  "eng": "Can you say it more simply?",
+  "kor": "더 쉽게 말해줄 수 있어요?",
+  "cat": "의사소통보조"
+ },
+ {
+  "id": "p930",
+  "eng": "One more time, please.",
+  "kor": "한 번만 더요.",
+  "cat": "의사소통보조"
+ },
+ {
+  "id": "p931",
+  "eng": "Do you speak Korean?",
+  "kor": "한국어 하세요?",
+  "cat": "의사소통보조"
+ },
+ {
+  "id": "p932",
+  "eng": "Is there someone who speaks English?",
+  "kor": "영어 하는 분 계세요?",
+  "cat": "의사소통보조"
+ },
+ {
+  "id": "p933",
+  "eng": "Let me look it up.",
+  "kor": "찾아볼게요.",
+  "cat": "의사소통보조"
+ },
+ {
+  "id": "p934",
+  "eng": "Bear with me, please.",
+  "kor": "잠시만 참아주세요.",
+  "cat": "의사소통보조"
+ },
+ {
+  "id": "p935",
+  "eng": "I'm still learning.",
+  "kor": "아직 배우는 중이에요.",
+  "cat": "의사소통보조"
+ },
+ {
+  "id": "p936",
+  "eng": "What do you mean exactly?",
+  "kor": "정확히 무슨 뜻이에요?",
+  "cat": "의사소통보조"
+ },
+ {
+  "id": "p937",
+  "eng": "Could you give me a moment?",
+  "kor": "잠깐 시간 주실래요?",
+  "cat": "의사소통보조"
+ },
+ {
+  "id": "p938",
+  "eng": "Help!",
+  "kor": "도와주세요!",
+  "cat": "긴급/안전"
+ },
+ {
+  "id": "p939",
+  "eng": "Call the police!",
+  "kor": "경찰을 불러주세요!",
+  "cat": "긴급/안전"
+ },
+ {
+  "id": "p940",
+  "eng": "I need a doctor.",
+  "kor": "의사가 필요해요.",
+  "cat": "긴급/안전"
+ },
+ {
+  "id": "p941",
+  "eng": "Where's the hospital?",
+  "kor": "병원이 어디예요?",
+  "cat": "긴급/안전"
+ },
+ {
+  "id": "p942",
+  "eng": "Someone stole my wallet.",
+  "kor": "누가 제 지갑을 훔쳐갔어요.",
+  "cat": "긴급/안전"
+ },
+ {
+  "id": "p943",
+  "eng": "I lost my passport.",
+  "kor": "여권을 잃어버렸어요.",
+  "cat": "긴급/안전"
+ },
+ {
+  "id": "p944",
+  "eng": "I need to report a theft.",
+  "kor": "도난 신고를 해야 해요.",
+  "cat": "긴급/안전"
+ },
+ {
+  "id": "p945",
+  "eng": "Is everyone okay?",
+  "kor": "다들 괜찮아요?",
+  "cat": "긴급/안전"
+ },
+ {
+  "id": "p946",
+  "eng": "Stay calm.",
+  "kor": "침착하세요.",
+  "cat": "긴급/안전"
+ },
+ {
+  "id": "p947",
+  "eng": "Get out of the way!",
+  "kor": "비켜요!",
+  "cat": "긴급/안전"
+ },
+ {
+  "id": "p948",
+  "eng": "It's not safe here.",
+  "kor": "여기 안전하지 않아요.",
+  "cat": "긴급/안전"
+ },
+ {
+  "id": "p949",
+  "eng": "Please hurry.",
+  "kor": "서둘러 주세요.",
+  "cat": "긴급/안전"
+ },
+ {
+  "id": "p950",
+  "eng": "I can't find my child.",
+  "kor": "아이를 잃어버렸어요.",
+  "cat": "긴급/안전"
+ },
+ {
+  "id": "p951",
+  "eng": "There's been an accident.",
+  "kor": "사고가 났어요.",
+  "cat": "긴급/안전"
+ },
+ {
+  "id": "p952",
+  "eng": "Which way is the exit?",
+  "kor": "출구가 어느 쪽이에요?",
+  "cat": "긴급/안전"
+ },
+ {
+  "id": "p953",
+  "eng": "I'm getting hungry.",
+  "kor": "배가 고파지네요.",
+  "cat": "느낌/상태"
+ },
+ {
+  "id": "p954",
+  "eng": "I'm a bit cold.",
+  "kor": "좀 추워요.",
+  "cat": "느낌/상태"
+ },
+ {
+  "id": "p955",
+  "eng": "I'm sleepy.",
+  "kor": "졸려요.",
+  "cat": "느낌/상태"
+ },
+ {
+  "id": "p956",
+  "eng": "My feet hurt.",
+  "kor": "발이 아파요.",
+  "cat": "느낌/상태"
+ },
+ {
+  "id": "p957",
+  "eng": "I feel great today.",
+  "kor": "오늘 컨디션 좋아요.",
+  "cat": "느낌/상태"
+ },
+ {
+  "id": "p958",
+  "eng": "I'm in a good mood.",
+  "kor": "기분이 좋아요.",
+  "cat": "느낌/상태"
+ },
+ {
+  "id": "p959",
+  "eng": "I'm not in the mood.",
+  "kor": "그럴 기분이 아니에요.",
+  "cat": "느낌/상태"
+ },
+ {
+  "id": "p960",
+  "eng": "I'm stressed out.",
+  "kor": "스트레스 받아요.",
+  "cat": "느낌/상태"
+ },
+ {
+  "id": "p961",
+  "eng": "I need some fresh air.",
+  "kor": "바람 좀 쐬어야겠어요.",
+  "cat": "느낌/상태"
+ },
+ {
+  "id": "p962",
+  "eng": "I'm wide awake.",
+  "kor": "잠이 완전히 깼어요.",
+  "cat": "느낌/상태"
+ },
+ {
+  "id": "p963",
+  "eng": "I feel like resting.",
+  "kor": "쉬고 싶어요.",
+  "cat": "느낌/상태"
+ },
+ {
+  "id": "p964",
+  "eng": "I'm thirsty.",
+  "kor": "목말라요.",
+  "cat": "느낌/상태"
+ },
+ {
+  "id": "p965",
+  "eng": "My back hurts.",
+  "kor": "허리가 아파요.",
+  "cat": "느낌/상태"
+ },
+ {
+  "id": "p966",
+  "eng": "I feel relaxed.",
+  "kor": "마음이 편해요.",
+  "cat": "느낌/상태"
+ },
+ {
+  "id": "p967",
+  "eng": "I'm a little anxious.",
+  "kor": "좀 불안해요.",
+  "cat": "느낌/상태"
+ },
+ {
+  "id": "p968",
+  "eng": "Thanks again for everything.",
+  "kor": "여러모로 다시 한번 고마워요.",
+  "cat": "마무리인사"
+ },
+ {
+  "id": "p969",
+  "eng": "It was great seeing you.",
+  "kor": "만나서 정말 좋았어요.",
+  "cat": "마무리인사"
+ },
+ {
+  "id": "p970",
+  "eng": "Let's do this again soon.",
+  "kor": "조만간 또 해요.",
+  "cat": "마무리인사"
+ },
+ {
+  "id": "p971",
+  "eng": "Drive safely.",
+  "kor": "운전 조심히 하세요.",
+  "cat": "마무리인사"
+ },
+ {
+  "id": "p972",
+  "eng": "Text me when you get home.",
+  "kor": "집에 도착하면 문자해요.",
+  "cat": "마무리인사"
+ },
+ {
+  "id": "p973",
+  "eng": "Get home safe.",
+  "kor": "집에 잘 들어가요.",
+  "cat": "마무리인사"
+ },
+ {
+  "id": "p974",
+  "eng": "Say hi to everyone for me.",
+  "kor": "모두에게 안부 전해줘요.",
+  "cat": "마무리인사"
+ },
+ {
+  "id": "p975",
+  "eng": "I had a great time.",
+  "kor": "정말 즐거웠어요.",
+  "cat": "마무리인사"
+ },
+ {
+  "id": "p976",
+  "eng": "Until next time.",
+  "kor": "다음에 또 봐요.",
+  "cat": "마무리인사"
+ },
+ {
+  "id": "p977",
+  "eng": "Let's keep it simple.",
+  "kor": "간단하게 하자.",
+  "cat": "기타표현"
+ },
+ {
+  "id": "p978",
+  "eng": "That's the whole point.",
+  "kor": "그게 핵심이에요.",
+  "cat": "기타표현"
+ },
+ {
+  "id": "p979",
+  "eng": "It's worth it.",
+  "kor": "그럴 만한 가치가 있어요.",
+  "cat": "기타표현"
+ },
+ {
+  "id": "p980",
+  "eng": "That depends on you.",
+  "kor": "그건 당신한테 달렸어요.",
+  "cat": "기타표현"
+ },
+ {
+  "id": "p981",
+  "eng": "Let's not rush.",
+  "kor": "서두르지 맙시다.",
+  "cat": "기타표현"
+ },
+ {
+  "id": "p982",
+  "eng": "One step at a time.",
+  "kor": "한 번에 하나씩.",
+  "cat": "기타표현"
+ },
+ {
+  "id": "p983",
+  "eng": "Better safe than sorry.",
+  "kor": "나중에 후회하느니 조심하는 게 나아요.",
+  "cat": "기타표현"
+ },
+ {
+  "id": "p984",
+  "eng": "It's now or never.",
+  "kor": "지금 아니면 안 돼요.",
+  "cat": "기타표현"
+ },
+ {
+  "id": "p985",
+  "eng": "Let's make it happen.",
+  "kor": "한번 해냅시다.",
+  "cat": "기타표현"
+ },
+ {
+  "id": "p986",
+  "eng": "That's life.",
+  "kor": "그게 인생이죠.",
+  "cat": "기타표현"
+ },
+ {
+  "id": "p987",
+  "eng": "Things happen for a reason.",
+  "kor": "다 이유가 있어서 일어나요.",
+  "cat": "기타표현"
+ },
+ {
+  "id": "p988",
+  "eng": "Let's look on the bright side.",
+  "kor": "긍정적으로 봐요.",
+  "cat": "기타표현"
+ },
+ {
+  "id": "p989",
+  "eng": "It could be worse.",
+  "kor": "더 나쁠 수도 있었어요.",
+  "cat": "기타표현"
+ },
+ {
+  "id": "p990",
+  "eng": "Let's give it our best.",
+  "kor": "최선을 다해 봐요.",
+  "cat": "기타표현"
+ },
+ {
+  "id": "p991",
+  "eng": "Keep your chin up.",
+  "kor": "기운 내요.",
+  "cat": "기타표현"
+ },
+ {
+  "id": "p992",
+  "eng": "Take a deep breath.",
+  "kor": "숨 한번 크게 쉬어요.",
+  "cat": "기타표현"
+ },
+ {
+  "id": "p993",
+  "eng": "Let's make the most of it.",
+  "kor": "최대한 즐겨봐요.",
+  "cat": "기타표현"
+ },
+ {
+  "id": "p994",
+  "eng": "That's good enough.",
+  "kor": "그 정도면 충분해요.",
+  "cat": "기타표현"
+ },
+ {
+  "id": "p995",
+  "eng": "Let's wrap this up.",
+  "kor": "이제 마무리하자.",
+  "cat": "기타표현"
+ },
+ {
+  "id": "p996",
+  "eng": "I'll keep that in mind.",
+  "kor": "명심할게요.",
+  "cat": "기타표현"
+ },
+ {
+  "id": "p997",
+  "eng": "That's a load off my mind.",
+  "kor": "마음이 놓이네요.",
+  "cat": "기타표현"
+ },
+ {
+  "id": "p998",
+  "eng": "Let's stay positive.",
+  "kor": "긍정적으로 생각해요.",
+  "cat": "기타표현"
+ },
+ {
+  "id": "p999",
+  "eng": "First things first.",
+  "kor": "중요한 것부터 합시다.",
+  "cat": "기타표현"
+ },
+ {
+  "id": "p1000",
+  "eng": "Let's play it by ear.",
+  "kor": "상황 봐서 정하자.",
+  "cat": "기타표현"
+ },
+ {
+  "id": "p1001",
+  "eng": "We're almost done.",
+  "kor": "거의 다 됐어요.",
+  "cat": "기타표현"
+ }
+];</script>
+<script>
+/* ---------- 기본 생활영어 문장 세트 ---------- */
+const SEED = [
+ // 인사 & 기본
+ ["Hi, how are you?","안녕, 잘 지내?","인사"],
+ ["How's it going?","어떻게 지내?","인사"],
+ ["Long time no see.","오랜만이야.","인사"],
+ ["Nice to meet you.","만나서 반가워요.","인사"],
+ ["What have you been up to?","요즘 뭐 하고 지냈어?","인사"],
+ ["Take care!","잘 지내! / 조심해!","인사"],
+ ["See you tomorrow.","내일 봐요.","인사"],
+ ["Have a good one.","좋은 하루 보내.","인사"],
+ ["Catch you later.","나중에 봐.","인사"],
+ ["It was nice talking to you.","얘기 즐거웠어요.","인사"],
+ // 자기소개
+ ["What do you do?","무슨 일 하세요?","자기소개"],
+ ["I work in marketing.","마케팅 일을 해요.","자기소개"],
+ ["Where are you from?","어디서 오셨어요?","자기소개"],
+ ["I'm from Korea.","저는 한국에서 왔어요.","자기소개"],
+ ["How long have you been here?","여기 온 지 얼마나 됐어요?","자기소개"],
+ ["I'm here on vacation.","휴가차 왔어요.","자기소개"],
+ ["What do you do for fun?","취미가 뭐예요?","자기소개"],
+ // 부탁 & 도움
+ ["Could you help me?","도와주실 수 있어요?","부탁"],
+ ["Can you do me a favor?","부탁 하나 들어줄래요?","부탁"],
+ ["Would you mind helping me?","도와주셔도 될까요?","부탁"],
+ ["Can you say that again?","다시 말해줄래요?","부탁"],
+ ["Could you speak more slowly?","좀 더 천천히 말해줄래요?","부탁"],
+ ["Can you spell that for me?","철자 좀 알려줄래요?","부탁"],
+ ["Let me know if you need anything.","필요한 거 있으면 알려줘요.","부탁"],
+ ["No problem at all.","전혀 문제없어요.","부탁"],
+ ["Sure, go ahead.","그럼요, 그렇게 하세요.","부탁"],
+ // 길찾기 & 여행
+ ["I'm looking for the station.","역을 찾고 있어요.","여행"],
+ ["How do I get to the airport?","공항에 어떻게 가나요?","여행"],
+ ["Is it far from here?","여기서 먼가요?","여행"],
+ ["Can you show me on the map?","지도에서 보여줄 수 있어요?","여행"],
+ ["Which way is downtown?","시내가 어느 쪽이에요?","여행"],
+ ["How long does it take?","얼마나 걸리나요?","여행"],
+ ["Does this bus go downtown?","이 버스 시내 가나요?","여행"],
+ ["I think I'm lost.","길을 잃은 것 같아요.","여행"],
+ ["Where's the nearest restroom?","가장 가까운 화장실이 어디예요?","여행"],
+ ["I'd like to check in, please.","체크인 하고 싶어요.","여행"],
+ // 식당
+ ["A table for two, please.","두 명 자리 주세요.","식당"],
+ ["Can I see the menu?","메뉴 좀 볼 수 있을까요?","식당"],
+ ["What do you recommend?","뭐가 맛있어요? / 추천해 주실래요?","식당"],
+ ["I'll have the same.","같은 걸로 할게요.","식당"],
+ ["Can I get this to go?","이거 포장되나요?","식당"],
+ ["Could we get the check?","계산서 주실래요?","식당"],
+ ["Is this spicy?","이거 매워요?","식당"],
+ ["Water, please.","물 주세요.","식당"],
+ ["Everything was great.","다 맛있었어요.","식당"],
+ ["Can I pay by card?","카드로 결제돼요?","식당"],
+ // 쇼핑
+ ["How much is this?","이거 얼마예요?","쇼핑"],
+ ["I'm just looking, thanks.","그냥 둘러보는 거예요, 감사해요.","쇼핑"],
+ ["Do you have this in a smaller size?","이거 더 작은 사이즈 있어요?","쇼핑"],
+ ["Can I try this on?","이거 입어봐도 돼요?","쇼핑"],
+ ["Can I get a refund?","환불 받을 수 있나요?","쇼핑"],
+ ["Is this on sale?","이거 세일 중이에요?","쇼핑"],
+ ["I'll take it.","이걸로 할게요.","쇼핑"],
+ ["Do you take credit cards?","카드 받으세요?","쇼핑"],
+ // 의견 & 감정
+ ["I think you're right.","당신 말이 맞는 것 같아요.","의견"],
+ ["I'm not sure about that.","그건 잘 모르겠어요.","의견"],
+ ["That makes sense.","말 되네요.","의견"],
+ ["I couldn't agree more.","전적으로 동의해요.","의견"],
+ ["It depends.","상황에 따라 달라요.","의견"],
+ ["I see what you mean.","무슨 말인지 알겠어요.","의견"],
+ ["That sounds great.","좋은 생각이에요.","의견"],
+ ["I'm so glad to hear that.","그 말 들으니 정말 기뻐요.","감정"],
+ ["I'm a little tired today.","오늘 좀 피곤해요.","감정"],
+ ["Don't worry about it.","걱정하지 마세요.","감정"],
+ ["I really appreciate it.","정말 고마워요.","감정"],
+ ["I'm sorry to hear that.","그것 참 안됐네요.","감정"],
+ // 일상 & 스몰토크
+ ["What time is it?","지금 몇 시예요?","일상"],
+ ["I'm running late.","좀 늦을 것 같아요.","일상"],
+ ["Let's grab a coffee.","커피 한잔 하자.","일상"],
+ ["What are you up to this weekend?","주말에 뭐 해?","일상"],
+ ["The weather is nice today.","오늘 날씨 좋네요.","일상"],
+ ["I'll be right back.","금방 올게요.","일상"],
+ ["Give me a second.","잠깐만요.","일상"],
+ ["It's up to you.","당신이 정하세요.","일상"],
+ ["Let me think about it.","좀 생각해 볼게요.","일상"],
+ ["Sounds good to me.","난 좋아.","일상"],
+ ["Maybe next time.","다음에 하자.","일상"],
+ ["I owe you one.","신세 졌네, 고마워.","일상"],
+ // 전화 & 직장
+ ["Can I take a message?","메시지 남겨드릴까요?","직장"],
+ ["Hold on a second, please.","잠시만 기다려 주세요.","직장"],
+ ["Could you call me back?","다시 전화 주실래요?","직장"],
+ ["Let's schedule a meeting.","회의 일정을 잡읍시다.","직장"],
+ ["I'll send you an email.","이메일 보낼게요.","직장"],
+ ["Can we reschedule?","일정을 변경할 수 있을까요?","직장"],
+ ["I'm on my way.","가는 중이에요.","직장"],
+ ["Let me get back to you.","나중에 답 드릴게요.","직장"],
+ // 문제상황 & 사과
+ ["I'm sorry, my mistake.","죄송해요, 제 실수예요.","사과"],
+ ["Excuse me, can I get through?","실례지만 지나가도 될까요?","사과"],
+ ["I didn't catch that.","못 알아들었어요.","사과"],
+ ["Sorry to bother you.","귀찮게 해서 죄송해요.","사과"],
+ ["It's not a big deal.","별일 아니에요.","사과"],
+ ["Never mind.","신경 쓰지 마세요.","사과"],
+ ["My pleasure.","천만에요. / 제가 좋아서 한 거예요.","사과"]
+];
+
+/* ---------- 저장소 (localStorage 차단 시 메모리 폴백) ---------- */
+const LS_SENT='et_sentences_v1', LS_PROG='et_progress_v1';
+const mem={};
+function lsGet(k){try{return localStorage.getItem(k)}catch(e){return mem[k]||null}}
+function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){mem[k]=v}}
+function loadSentences(){
+  const raw=lsGet(LS_SENT);
+  if(raw){try{return JSON.parse(raw)}catch(e){}}
+  // 배포 빌드에 내장된 문장이 있으면 그것을, 없으면 기본 SEED 사용
+  let s;
+  if(window.EMBEDDED_SENTENCES && window.EMBEDDED_SENTENCES.length){
+    s=window.EMBEDDED_SENTENCES.map((x,i)=>({id:x.id||'e'+i,eng:x.eng,kor:x.kor,cat:x.cat||'기타'}));
+  }else{
+    s=SEED.map((x,i)=>({id:'s'+i,eng:x[0],kor:x[1],cat:x[2]||'기타'}));
+  }
+  lsSet(LS_SENT,JSON.stringify(s));
+  return s;
+}
+function saveSentences(s){lsSet(LS_SENT,JSON.stringify(s))}
+function loadProgress(){
+  const raw=lsGet(LS_PROG);
+  if(raw){try{return JSON.parse(raw)}catch(e){}}
+  return {};
+}
+function saveProgress(p){lsSet(LS_PROG,JSON.stringify(p))}
+
+let sentences=loadSentences();
+let progress=loadProgress(); // id -> {box, due, seen, correct, lastWrong}
+
+// 박스별 간격(초). 1=즉시 다시, 5=거의 통과
+const BOX_INTERVAL=[0,0,60*5,60*60*8,60*60*24*2,60*60*24*7];
+function prog(id){
+  if(!progress[id]) progress[id]={box:1,due:0,seen:0,correct:0,lastWrong:false};
+  return progress[id];
+}
+
+/* ---------- 다음 문장 선택 ---------- */
+let current=null;
+function pickNext(){
+  const now=Date.now()/1000;
+  // due가 지난 것 중 box 낮은 순, 그다음 한 번도 안 본 것
+  const arr=sentences.map(s=>({s,p:prog(s.id)}));
+  let due=arr.filter(x=>x.p.due<=now);
+  if(due.length===0) due=arr; // 다 끝났으면 그냥 전체
+  due.sort((a,b)=>{
+    if(a.p.box!==b.p.box) return a.p.box-b.p.box;
+    return a.p.due-b.p.due;
+  });
+  return due[0].s;
+}
+
+/* ---------- 음성 합성 ---------- */
+let enVoice=null, enVoices=[];
+// 자연스러운(신경망) 음성일수록 높은 점수
+function voiceScore(v){
+  let s=0; const n=v.name.toLowerCase();
+  if(/en[-_]us/i.test(v.lang)) s+=40; else if(/^en/i.test(v.lang)) s+=20;
+  if(/natural|neural/.test(n)) s+=50;     // Microsoft ... Online (Natural)
+  if(/google/.test(n)) s+=45;             // Chrome: Google US English
+  if(/online/.test(n)) s+=30;
+  if(/aria|jenny|guy|emma|michelle|ava|andrew/.test(n)) s+=25; // MS 신경망 이름
+  if(/samantha|alex|siri/.test(n)) s+=20; // macOS 고품질
+  if(/zira|david|mark|hazel|microsoft (?!.*online)/.test(n)) s-=15; // 구형 SAPI
+  if(/espeak|robot|compact/.test(n)) s-=40;
+  return s;
+}
+function buildVoiceList(){
+  const all=speechSynthesis.getVoices();
+  enVoices=all.filter(v=>/^en/i.test(v.lang)).sort((a,b)=>voiceScore(b)-voiceScore(a));
+  const sel=document.getElementById('voiceSel');
+  if(sel&&enVoices.length){
+    sel.innerHTML=enVoices.map((v,i)=>
+      `<option value="${i}">${v.name.replace(/microsoft|google/i,m=>m).slice(0,32)} (${v.lang})</option>`).join('');
+    enVoice=enVoices[0]; sel.value='0';
+    sel.onchange=()=>{enVoice=enVoices[+sel.value]; if(current) speak(current.eng);};
+  }
+}
+speechSynthesis.onvoiceschanged=buildVoiceList; buildVoiceList();
+setTimeout(buildVoiceList,300); // 일부 브라우저는 늦게 로드됨
+function speak(text,rate){
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  if(enVoice) u.voice=enVoice;
+  u.lang=(enVoice&&enVoice.lang)||'en-US';
+  u.rate=rate||parseFloat(document.getElementById('rate').value)||0.9;
+  u.pitch=1; speechSynthesis.speak(u);
+}
+
+/* ---------- 음성 인식 ---------- */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let recog=null, recognizing=false;
+function normalize(t){return t.toLowerCase().replace(/[^a-z0-9'\s]/g,'').replace(/\s+/g,' ').trim()}
+function compare(target,said){
+  const a=normalize(target).split(' '), b=normalize(said).split(' ');
+  const bset={}; b.forEach(w=>bset[w]=(bset[w]||0)+1);
+  let hit=0; const marks=a.map(w=>{
+    if(bset[w]>0){bset[w]--;hit++;return {w,ok:true}} return {w,ok:false};
+  });
+  return {score:Math.round(hit/a.length*100),marks};
+}
+function startRec(){
+  if(!SR){document.getElementById('recResult').innerHTML=
+    '<span class="w-bad">이 브라우저는 음성인식을 지원하지 않아요. 크롬을 사용하세요.</span>';return}
+  recog=new SR(); recog.lang='en-US'; recog.interimResults=false; recog.maxAlternatives=1;
+  recognizing=true; document.getElementById('btnRec').textContent='🎙️ 듣는 중...';
+  document.getElementById('recResult').textContent='말해보세요...';
+  recog.onresult=e=>{
+    const said=e.results[0][0].transcript;
+    const {score,marks}=compare(current.eng,said);
+    const html=marks.map(m=>`<span class="${m.ok?'w-ok':'w-bad'}">${m.w}</span>`).join(' ');
+    document.getElementById('recResult').innerHTML=
+      `<div class="score" style="color:${score>=80?'var(--good)':score>=50?'var(--warn)':'var(--bad)'}">${score}점</div>`+
+      `<div>${html}</div>`+
+      `<div class="meta">내가 말한 것: "${said}"</div>`;
+    document.getElementById('gradeRow').style.display='flex';
+  };
+  recog.onerror=e=>{document.getElementById('recResult').innerHTML=
+    `<span class="w-bad">인식 오류: ${e.error} (마이크 권한을 확인하세요)</span>`};
+  recog.onend=()=>{recognizing=false;document.getElementById('btnRec').textContent='🎤 따라 말하기'};
+  recog.start();
+}
+
+/* ---------- 화면 렌더 ---------- */
+function renderLearn(){
+  current=pickNext();
+  const p=prog(current.id);
+  document.getElementById('catpill').innerHTML=
+    `<span class="pill">${current.cat}</span><span class="pill">박스 ${p.box}/5</span>`+
+    `<span class="pill">${p.seen}회 학습</span>`;
+  document.getElementById('eng').textContent=current.eng;
+  document.getElementById('kor').textContent=current.kor;
+  document.getElementById('kor').style.display='none';
+  document.getElementById('meta').textContent='';
+  document.getElementById('recResult').innerHTML='';
+  document.getElementById('gradeRow').style.display='flex';
+  renderWordChips(current.eng);
+  if(document.getElementById('autoplay').checked) speak(current.eng);
+}
+
+/* ---------- 단어 사전 ---------- */
+const dictCache={};
+function renderWordChips(sentence){
+  const words=[...new Set(sentence.split(/\s+/)
+    .map(w=>w.replace(/[^A-Za-z'-]/g,'')).filter(w=>w.length>1))];
+  const chips=document.getElementById('wordChips');
+  chips.innerHTML=words.map(w=>`<span class="wchip" data-w="${w.toLowerCase()}">${w}</span>`).join('');
+  document.getElementById('wordInfo').innerHTML=
+    '<span class="meta">단어를 누르면 발음과 뜻을 볼 수 있어요.</span>';
+  chips.querySelectorAll('.wchip').forEach(c=>c.onclick=()=>{
+    chips.querySelectorAll('.wchip').forEach(x=>x.classList.remove('active'));
+    c.classList.add('active'); lookupWord(c.dataset.w);
+  });
+}
+// 구글 번역 무료 엔드포인트로 영→한 뜻 가져오기
+async function translateKo(text){
+  const url='https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ko&dt=t&q='+encodeURIComponent(text);
+  const r=await fetch(url); const d=await r.json();
+  return d[0].map(seg=>seg[0]).join('');
+}
+async function lookupWord(word){
+  speak(word);
+  const info=document.getElementById('wordInfo');
+  if(dictCache[word]){info.innerHTML=dictCache[word];return}
+  info.innerHTML='<span class="meta">영한사전 찾는 중...</span>';
+  // 한국어 뜻 + 발음기호/품사를 병렬로 조회
+  const koP=translateKo(word).catch(()=>'');
+  const dictP=fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(word))
+    .then(r=>r.ok?r.json():null).catch(()=>null);
+  const [ko,dict]=await Promise.all([koP,dictP]);
+  let ipa='', posList=[];
+  if(dict&&dict[0]){
+    const e=dict[0];
+    ipa=(e.phonetic||(e.phonetics.find(p=>p.text)||{}).text||'');
+    posList=[...new Set(e.meanings.map(m=>m.partOfSpeech))];
+  }
+  const posKo={noun:'명사',verb:'동사',adjective:'형용사',adverb:'부사',
+    preposition:'전치사',pronoun:'대명사',conjunction:'접속사',
+    interjection:'감탄사',determiner:'한정사'};
+  const pos=posList.map(p=>posKo[p]||p).join(', ');
+  let html=`<div><b style="font-size:18px">${word}</b> <span class="ipa">${ipa}</span>`+
+    (pos?` <span class="pos">${pos}</span>`:'')+`</div>`+
+    `<div class="def" style="font-size:18px;margin-top:6px">🇰🇷 ${ko||'(뜻을 가져오지 못함)'}</div>`+
+    `<div class="meta" style="margin-top:8px"><a href="https://en.dict.naver.com/#/search?query=${encodeURIComponent(word)}" target="_blank">📖 네이버 영한사전에서 더 보기</a></div>`;
+  dictCache[word]=html; info.innerHTML=html;
+}
+function gradeItem(item,pass){
+  const p=prog(item.id); p.seen++;
+  if(pass){p.box=Math.min(5,p.box+1);p.correct++;p.lastWrong=false}
+  else{p.box=1;p.lastWrong=true}
+  p.due=Date.now()/1000+BOX_INTERVAL[p.box];
+  saveProgress(progress); refreshStats();
+}
+
+/* ---------- 훈련 탭: 한글 보고 영어로 말하기 ---------- */
+let trCurrent=null, trRecognizing=false;
+function renderTrain(){
+  trCurrent=pickNext();
+  const p=prog(trCurrent.id);
+  document.getElementById('trCatpill').innerHTML=
+    `<span class="pill">${trCurrent.cat}</span><span class="pill">박스 ${p.box}/5</span>`+
+    `<span class="pill">${p.seen}회</span>`;
+  document.getElementById('trKor').textContent=trCurrent.kor||'(뜻 없음)';
+  document.getElementById('trResult').innerHTML='';
+  document.getElementById('trManualRow').style.display='none';
+}
+function trStartRec(){
+  if(!SR){document.getElementById('trResult').innerHTML=
+    '<span class="w-bad">이 브라우저는 음성인식을 지원하지 않아요. 크롬을 사용하세요.</span>';return}
+  const rec=new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
+  trRecognizing=true; document.getElementById('trBtnRec').textContent='🎙️ 듣는 중...';
+  document.getElementById('trResult').textContent='영어로 말해보세요...';
+  rec.onresult=e=>{
+    const said=e.results[0][0].transcript;
+    const {score,marks}=compare(trCurrent.eng,said);
+    const pass=score>=80;
+    const html=marks.map(m=>`<span class="${m.ok?'w-ok':'w-bad'}">${m.w}</span>`).join(' ');
+    document.getElementById('trResult').innerHTML=
+      `<div class="score" style="color:${pass?'var(--good)':score>=50?'var(--warn)':'var(--bad)'}">${score}점 ${pass?'✅ 통과':'🔁 반복'}</div>`+
+      `<div><b>정답:</b> ${html}</div>`+
+      `<div class="meta">내가 말한 것: "${said}"</div>`;
+    speak(trCurrent.eng);
+    gradeItem(trCurrent,pass);
+    // 통과면 다음, 반복이면 같은 문장 유지하며 수동 버튼 표시
+    if(pass){ setTimeout(renderTrain,1800); }
+    else{ document.getElementById('trManualRow').style.display='flex'; }
+  };
+  rec.onerror=e=>{document.getElementById('trResult').innerHTML=
+    `<span class="w-bad">인식 오류: ${e.error} (마이크 권한 확인)</span>`};
+  rec.onend=()=>{trRecognizing=false;document.getElementById('trBtnRec').textContent='🎤 영어로 말하기'};
+  rec.start();
+}
+
+function refreshStats(){
+  const total=sentences.length;
+  let seen=0,mastered=0,wrong=0,boxes=[0,0,0,0,0,0];
+  sentences.forEach(s=>{const p=prog(s.id);
+    if(p.seen>0)seen++; if(p.box>=5)mastered++; if(p.lastWrong)wrong++; boxes[p.box]++;});
+  document.getElementById('statGrid').innerHTML=
+    box('전체 문장',total)+box('학습 시작',seen)+box('완전 암기',mastered)+box('복습 필요',wrong);
+  let bars='';
+  for(let i=1;i<=5;i++){const pct=total?Math.round(boxes[i]/total*100):0;
+    bars+=`<div class="meta">박스 ${i}: ${boxes[i]}개</div><div class="bar"><div style="width:${pct}%"></div></div>`;}
+  document.getElementById('boxBars').innerHTML=bars;
+  document.getElementById('manageCount').textContent=`총 ${total}개 문장`;
+}
+function box(l,n){return `<div class="box"><div class="num">${n}</div><div class="lbl">${l}</div></div>`}
+
+function renderReview(){
+  const now=Date.now()/1000;
+  const items=sentences.map(s=>({s,p:prog(s.id)}))
+    .filter(x=>x.p.lastWrong||(x.p.seen>0&&x.p.due<=now))
+    .sort((a,b)=>a.p.box-b.p.box);
+  const el=document.getElementById('reviewList');
+  if(items.length===0){el.innerHTML='<p class="kor">복습할 문장이 없어요. 잘하고 있어요! 🎉</p>';return}
+  el.innerHTML=items.map(x=>`
+    <div class="list-item">
+      <div><div class="e">${x.s.eng}</div><div class="k">${x.s.kor}</div></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="box-badge" style="background:var(--card2)">박스 ${x.p.box}</span>
+        <button onclick="speak('${x.s.eng.replace(/'/g,"\\'")}')">🔊</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderAll(){
+  const el=document.getElementById('allList');
+  // 카테고리별로 묶어서 구분 헤더와 함께 표시
+  const groups={};
+  sentences.forEach(s=>{(groups[s.cat||'기타']=groups[s.cat||'기타']||[]).push(s)});
+  let html='';
+  Object.keys(groups).forEach(cat=>{
+    html+=`<div class="cat-header">📂 ${cat} <span>(${groups[cat].length})</span></div>`;
+    html+=groups[cat].map(s=>`
+      <div class="list-item">
+        <div><div class="e">${s.eng}</div><div class="k">${s.kor}</div></div>
+        <div style="display:flex;gap:6px">
+          <button onclick="speak('${s.eng.replace(/'/g,"\\'")}')">🔊</button>
+          <button class="bad" onclick="delSentence('${s.id}')">삭제</button>
+        </div>
+      </div>`).join('');
+  });
+  el.innerHTML=html;
+}
+function delSentence(id){
+  sentences=sentences.filter(s=>s.id!==id); saveSentences(sentences);
+  delete progress[id]; saveProgress(progress);
+  renderAll(); refreshStats();
+}
+
+/* ---------- 이벤트 ---------- */
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  ['learn','train','review','stats','manage'].forEach(id=>
+    document.getElementById(id).style.display=id===t.dataset.tab?'block':'none');
+  if(t.dataset.tab==='train')renderTrain();
+  if(t.dataset.tab==='review')renderReview();
+  if(t.dataset.tab==='stats')refreshStats();
+  if(t.dataset.tab==='manage'){renderAll();refreshStats()}
+});
+document.getElementById('btnPlay').onclick=()=>speak(current.eng);
+document.getElementById('btnSlow').onclick=()=>speak(current.eng,0.65);
+document.getElementById('btnRec').onclick=()=>{if(!recognizing)startRec()};
+document.getElementById('btnShowKor').onclick=()=>{
+  const k=document.getElementById('kor');k.style.display=k.style.display==='none'?'block':'none';};
+document.getElementById('btnNext').onclick=()=>renderLearn();
+document.getElementById('trBtnRec').onclick=()=>{if(!trRecognizing)trStartRec()};
+document.getElementById('trBtnReveal').onclick=()=>{
+  document.getElementById('trResult').innerHTML=
+    `<div style="font-size:22px;font-weight:700">${trCurrent.eng}</div>`;
+  speak(trCurrent.eng);
+  document.getElementById('trManualRow').style.display='flex';
+};
+document.getElementById('trBtnSkip').onclick=()=>renderTrain();
+document.getElementById('trPass').onclick=()=>{gradeItem(trCurrent,true);renderTrain();};
+document.getElementById('trFail').onclick=()=>{gradeItem(trCurrent,false);renderTrain();};
+
+document.getElementById('btnAdd').onclick=()=>{
+  const lines=document.getElementById('addBox').value.split('\n').map(l=>l.trim()).filter(Boolean);
+  let added=0;
+  lines.forEach(l=>{const p=l.split('|').map(x=>x.trim());
+    if(p[0]){sentences.push({id:'u'+Date.now()+Math.random().toString(36).slice(2,6),
+      eng:p[0],kor:p[1]||'',cat:p[2]||'추가'});added++;}});
+  saveSentences(sentences);document.getElementById('addBox').value='';
+  renderAll();refreshStats();alert(added+'개 문장을 추가했어요.');
+};
+document.getElementById('btnExportAll').onclick=()=>download('sentences.json',JSON.stringify(sentences,null,2));
+document.getElementById('btnExportProgress').onclick=()=>download('progress.json',JSON.stringify(progress,null,2));
+document.getElementById('importFile').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result);
+    if(Array.isArray(d)){sentences=d;saveSentences(sentences);renderAll();refreshStats();
+      alert('문장 '+d.length+'개를 불러왔어요.');}
+  }catch(err){alert('파일을 읽을 수 없어요.')}};r.readAsText(f);
+};
+document.getElementById('btnReset').onclick=()=>{
+  if(confirm('학습 진도를 모두 초기화할까요? (문장은 유지됩니다)')){
+    progress={};saveProgress(progress);refreshStats();renderLearn();}
+};
+function download(name,content){
+  const b=new Blob([content],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();
+}
+
+renderLearn(); refreshStats();
+</script>
+</body>
+</html>
