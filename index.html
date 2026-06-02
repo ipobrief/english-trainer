@@ -6423,6 +6423,8 @@ function compare(target,said){
   });
   return {score:Math.round(hit/a.length*100),marks};
 }
+// 모바일은 마이크 점유 시 음성인식이 안 되므로 녹음(내 발음 듣기) 비활성
+const IS_MOBILE=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 // 마이크 녹음(내 발음 듣기용) — 스트림을 재사용해 시작 지연/잘림 방지
 let mediaRecorder=null, myVoiceUrl=null, micStream=null;
 async function getMic(){
@@ -6464,7 +6466,7 @@ async function startRec(){
   recognizing=true;
   document.getElementById('btnRec').textContent='🎙️ 준비 중...';
   document.getElementById('recResult').innerHTML='<span class="meta">🎤 마이크 준비 중...</span>';
-  await startVoiceRecording();           // 녹음이 실제로 시작된 뒤에
+  if(!IS_MOBILE) await startVoiceRecording();  // PC만 녹음(모바일은 인식과 충돌)
   recog=new SR(); recog.lang='en-US'; recog.interimResults=false; recog.maxAlternatives=1;
   recog.onstart=()=>{                     // 인식 엔진이 실제로 켜진 순간 신호
     beep();
@@ -6572,8 +6574,18 @@ function gradeItem(item,pass){
 
 /* ---------- 훈련 탭: 한글 보고 영어로 말하기 ---------- */
 let trCurrent=null, trRecognizing=false;
+// 훈련은 랜덤 출제: 복습 시간이 된 문장 중 무작위, 없으면 전체에서 무작위
+function pickRandom(){
+  const now=Date.now()/1000;
+  let pool=sentences.filter(s=>prog(s.id).due<=now);
+  if(pool.length===0) pool=sentences;
+  let s=pool[Math.floor(Math.random()*pool.length)];
+  if(pool.length>1 && trCurrent && s.id===trCurrent.id)  // 같은 문장 연속 방지
+    s=pool[(pool.indexOf(s)+1)%pool.length];
+  return s;
+}
 function renderTrain(){
-  trCurrent=pickNext();
+  trCurrent=pickRandom();
   const p=prog(trCurrent.id);
   document.getElementById('trCatpill').innerHTML=
     `<span class="pill">${trCurrent.cat}</span><span class="pill">박스 ${p.box}/5</span>`+
@@ -6588,7 +6600,6 @@ async function trStartRec(){
   trRecognizing=true;
   document.getElementById('trBtnRec').textContent='🎙️ 준비 중...';
   document.getElementById('trResult').innerHTML='<span class="meta">🎤 마이크 준비 중...</span>';
-  await getMic();   // 마이크 미리 켜서 첫 음절 잘림 방지
   const rec=new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
   rec.onstart=()=>{ beep();
     document.getElementById('trBtnRec').textContent='🎙️ 듣는 중...';
