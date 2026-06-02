@@ -95,6 +95,7 @@
     <div class="tab" data-tab="review">틀린 문장 복습</div>
     <div class="tab" data-tab="stats">진도</div>
     <div class="tab" data-tab="manage">문장 관리</div>
+    <div class="tab" data-tab="alarm">알람</div>
   </div>
 
   <!-- LEARN -->
@@ -188,6 +189,37 @@ Can I get a refund? | 환불 받을 수 있나요? | 쇼핑"></textarea>
     <div class="card">
       <h3 style="margin-top:0">전체 문장 목록</h3>
       <div id="allList"></div>
+    </div>
+  </section>
+
+  <!-- ALARM -->
+  <section id="alarm" style="display:none">
+    <div class="card">
+      <h2 style="margin-top:0">🔔 매일 학습 알람</h2>
+      <p class="meta">매일 알림 받을 시간을 정하세요.</p>
+      <div class="row" style="align-items:center">
+        <input type="time" id="alarmTime" value="21:00"
+          style="font-size:20px;padding:8px 12px;background:var(--card2);
+          color:var(--txt);border:1px solid var(--line);border-radius:10px">
+      </div>
+
+      <h3>① 캘린더 알람 (앱을 꺼도 알림 받기 · 추천)</h3>
+      <p class="hint">버튼을 누르면 "매일 반복" 알람 파일이 다운로드돼요.
+      파일을 열어 폰 캘린더에 추가하면, 매일 그 시간에 폰이 알려줍니다.</p>
+      <div class="row">
+        <button class="primary" id="btnIcs">📅 매일 알람 캘린더에 추가</button>
+      </div>
+
+      <h3 style="margin-top:24px">② 앱 내 알림 (앱이 열려 있을 때)</h3>
+      <p class="hint">알림을 허용하면, 앱을 켜둔 상태에서 정한 시간에 알림이 떠요.</p>
+      <div class="row">
+        <button id="btnNotifPerm">🔔 알림 권한 허용</button>
+      </div>
+      <div class="meta" id="alarmStatus" style="margin-top:12px"></div>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">오늘의 학습</h3>
+      <div id="todayStatus" class="meta"></div>
     </div>
   </section>
 </div>
@@ -6509,6 +6541,7 @@ function renderLearn(){
   renderWordChips(current.eng);
   prog(current.id).studied=true;            // 학습 탭에서 본 문장 → 훈련 대상에 포함
   saveProgress(progress);
+  markStudiedToday();
   lsSet('et_learnidx', String(learnIdx));   // 마지막 위치 저장(이어서 학습)
   const auto=document.getElementById('autoplay').checked;
   const flow=document.getElementById('autoflow').checked;
@@ -6700,9 +6733,10 @@ function delSentence(id){
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
   t.classList.add('active');
-  ['learn','train','review','stats','manage'].forEach(id=>
+  ['learn','train','review','stats','manage','alarm'].forEach(id=>
     document.getElementById(id).style.display=id===t.dataset.tab?'block':'none');
   if(t.dataset.tab==='train')renderTrain();
+  if(t.dataset.tab==='alarm')renderAlarm();
   if(t.dataset.tab==='review')renderReview();
   if(t.dataset.tab==='stats')refreshStats();
   if(t.dataset.tab==='manage'){renderAll();refreshStats()}
@@ -6748,10 +6782,63 @@ document.getElementById('btnReset').onclick=()=>{
   if(confirm('학습 진도를 모두 초기화할까요? (문장은 유지됩니다)')){
     progress={};saveProgress(progress);refreshStats();renderLearn();}
 };
-function download(name,content){
-  const b=new Blob([content],{type:'application/json'});
+function download(name,content,type){
+  const b=new Blob([content],{type:type||'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();
 }
+
+/* ---------- 알람 ---------- */
+function todayStr(){return new Date().toISOString().slice(0,10)}
+function markStudiedToday(){lsSet('et_lastday',todayStr())}
+function renderAlarm(){
+  const t=lsGet('et_alarmtime'); if(t) document.getElementById('alarmTime').value=t;
+  const last=lsGet('et_lastday');
+  const done=last===todayStr();
+  document.getElementById('todayStatus').innerHTML= done
+    ? '<span style="color:var(--good);font-weight:700">✅ 오늘 학습 완료!</span>'
+    : '<span style="color:var(--warn)">아직 오늘 학습 전이에요. 학습 탭에서 시작해 보세요!</span>';
+  const perm=(window.Notification&&Notification.permission)||'unsupported';
+  document.getElementById('alarmStatus').textContent=
+    perm==='granted'?'알림 허용됨 ✅':perm==='denied'?'알림이 차단되어 있어요 (브라우저 설정에서 허용 필요)':
+    perm==='unsupported'?'이 브라우저는 알림을 지원하지 않아요.':'알림 권한이 아직 설정되지 않았어요.';
+}
+function pad(n){return String(n).padStart(2,'0')}
+// 시간 입력값으로 매일 반복 .ics 생성
+function buildIcs(hhmm){
+  const [h,m]=hhmm.split(':').map(Number);
+  const now=new Date();
+  const dt=`${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}T${pad(h)}${pad(m)}00`;
+  const stamp=now.toISOString().replace(/[-:]/g,'').slice(0,15)+'Z';
+  const uid='et-'+Date.now()+'@english-trainer';
+  return [
+    'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//EnglishTrainer//KO','CALSCALE:GREGORIAN',
+    'BEGIN:VEVENT',`UID:${uid}`,`DTSTAMP:${stamp}`,
+    `DTSTART:${dt}`,'RRULE:FREQ=DAILY','SUMMARY:🗣️ 영어 학습/훈련 시간!',
+    'DESCRIPTION:생활영어 암기 트레이너에서 학습하고 훈련하세요.',
+    'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:영어 학습 시간!','TRIGGER:PT0M',
+    'END:VALARM','END:VEVENT','END:VCALENDAR'
+  ].join('\r\n');
+}
+document.getElementById('alarmTime').onchange=e=>lsSet('et_alarmtime',e.target.value);
+document.getElementById('btnIcs').onclick=()=>{
+  const t=document.getElementById('alarmTime').value||'21:00';
+  lsSet('et_alarmtime',t);
+  download('english-study-alarm.ics',buildIcs(t),'text/calendar');
+};
+document.getElementById('btnNotifPerm').onclick=async()=>{
+  if(!window.Notification){alert('이 브라우저는 알림을 지원하지 않아요.');return}
+  const p=await Notification.requestPermission(); renderAlarm();
+  if(p==='granted') new Notification('알림이 설정됐어요! 🔔',{body:'앱이 열려 있을 때 정한 시간에 알려드릴게요.'});
+};
+// 앱이 열려 있을 때: 1분마다 알람 시간 확인 (하루 1회만)
+setInterval(()=>{
+  const t=lsGet('et_alarmtime'); if(!t||!window.Notification||Notification.permission!=='granted')return;
+  const now=new Date(); const cur=pad(now.getHours())+':'+pad(now.getMinutes());
+  if(cur===t && lsGet('et_notified')!==todayStr()){
+    lsSet('et_notified',todayStr());
+    new Notification('🗣️ 영어 학습 시간!',{body:'오늘의 학습과 훈련을 시작해 보세요.'});
+  }
+},60000);
 
 // 이어서 학습: 저장된 위치 복원 (자동재생은 첫 진입 시 끔 — 새로고침 직후 소리 방지)
 const savedIdx=parseInt(lsGet('et_learnidx')||'0',10);
