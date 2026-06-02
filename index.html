@@ -117,7 +117,8 @@
       <div class="result" id="recResult"></div>
 
       <div class="row">
-        <button class="primary" id="btnNext">➡️ 다음 문장</button>
+        <button id="btnPrev">⬅️ 이전</button>
+        <button class="primary" id="btnNext">다음 문장 ➡️</button>
       </div>
     </div>
     <p class="hint">팁: 문장이 자동으로 입에서 나올 때까지 🔊듣고 → 🎤따라 말하기를 반복하세요.
@@ -6349,7 +6350,7 @@ function prog(id){
 }
 
 /* ---------- 다음 문장 선택 ---------- */
-let current=null;
+let current=null, learnIdx=0;
 function pickNext(){
   const now=Date.now()/1000;
   // due가 지난 것 중 box 낮은 순, 그다음 한 번도 안 본 것
@@ -6469,17 +6470,19 @@ function startRec(){
 
 /* ---------- 화면 렌더 ---------- */
 function renderLearn(){
-  current=pickNext();
+  if(learnIdx<0) learnIdx=sentences.length-1;
+  if(learnIdx>=sentences.length) learnIdx=0;
+  current=sentences[learnIdx];
   const p=prog(current.id);
   document.getElementById('catpill').innerHTML=
-    `<span class="pill">${current.cat}</span><span class="pill">박스 ${p.box}/5</span>`+
+    `<span class="pill">${current.cat}</span>`+
+    `<span class="pill">${learnIdx+1} / ${sentences.length}</span>`+
     `<span class="pill">${p.seen}회 학습</span>`;
   document.getElementById('eng').textContent=current.eng;
   document.getElementById('kor').textContent=current.kor;
   document.getElementById('kor').style.display='none';
   document.getElementById('meta').textContent='';
   document.getElementById('recResult').innerHTML='';
-  document.getElementById('gradeRow').style.display='flex';
   renderWordChips(current.eng);
   if(document.getElementById('autoplay').checked) speak(current.eng);
 }
@@ -6650,7 +6653,8 @@ document.getElementById('btnSlow').onclick=()=>speak(current.eng,0.65);
 document.getElementById('btnRec').onclick=()=>{if(!recognizing)startRec()};
 document.getElementById('btnShowKor').onclick=()=>{
   const k=document.getElementById('kor');k.style.display=k.style.display==='none'?'block':'none';};
-document.getElementById('btnNext').onclick=()=>renderLearn();
+document.getElementById('btnNext').onclick=()=>{learnIdx++;renderLearn();};
+document.getElementById('btnPrev').onclick=()=>{learnIdx--;renderLearn();};
 document.getElementById('trBtnRec').onclick=()=>{if(!trRecognizing)trStartRec()};
 document.getElementById('trBtnReveal').onclick=()=>{
   document.getElementById('trResult').innerHTML=
