@@ -1,13 +1,18 @@
-name: Build Android APK (TWA)
+name: Build Android AAB (TWA)
 
 on:
-  workflow_dispatch:  # 수동 실행
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
 
       - uses: actions/setup-node@v4
         with:
@@ -16,45 +21,77 @@ jobs:
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
-      - name: Init TWA project
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Generate signing keystore
         run: |
-          mkdir twa && cd twa
-          bubblewrap init \
-            --manifest "https://ipobrief.github.io/english-trainer/manifest.json" \
-            --directory . \
-            --packageId "io.github.ipobrief.englishtrainer" \
-            --name "생활영어 암기 트레이너" \
-            --launcherName "영어 트레이너" \
-            --display "standalone" \
-            --themeColor "#0f1226" \
-            --backgroundColor "#0f1226" \
-            --startUrl "/" \
-            --iconUrl "https://ipobrief.github.io/english-trainer/icon-512.png" \
-            --maskableIconUrl "https://ipobrief.github.io/english-trainer/icon-maskable.png" \
-            --signingKeyPath "./android.keystore" \
-            --signingKeyAlias "android" \
-            --ks-pass "pass:english123" \
-            --key-pass "pass:english123" \
-            --minSdkVersion 19 \
-            --targetSdkVersion 34 \
-            --versionCode 1 \
-            --versionName "1.0.0"
+          keytool -genkey -v \
+            -keystore android.keystore \
+            -alias android \
+            -keyalg RSA -keysize 2048 \
+            -validity 10000 \
+            -storepass english123 \
+            -keypass english123 \
+            -dname "CN=영어트레이너, OU=English, O=ipobrief, L=Seoul, ST=Seoul, C=KR"
+
+      - name: Init TWA from manifest
+        run: |
+          bubblewrap init --manifest https://ipobrief.github.io/english-trainer/manifest.json
         env:
           BUBBLEWRAP_SKIP_UPDATE: "true"
+          CI: "true"
+
+      - name: Copy keystore & patch signing config
+        run: |
+          cp android.keystore twa/android.keystore
+          cd twa
+          # twa-manifest.json 에 서명 정보 주입
+          node -e "
+            const fs = require('fs');
+            const m = JSON.parse(fs.readFileSync('twa-manifest.json','utf8'));
+            m.signingKey = { path: './android.keystore', alias: 'android' };
+            fs.writeFileSync('twa-manifest.json', JSON.stringify(m, null, 2));
+          "
 
       - name: Build AAB
         run: |
           cd twa
-          bubblewrap build --skipPwaValidation
+          bubblewrap build \
+            --skipPwaValidation \
+            --signingKeyPath ./android.keystore \
+            --signingKeyAlias android \
+            --ks-pass pass:english123 \
+            --key-pass pass:english123
         env:
           BUBBLEWRAP_SKIP_UPDATE: "true"
 
-      - name: Upload AAB artifact
+      - name: Generate assetlinks.json
+        run: |
+          FINGERPRINT=$(keytool -list -v \
+            -keystore android.keystore \
+            -alias android \
+            -storepass english123 2>/dev/null \
+            | grep "SHA256:" | head -1 | awk '{print $2}')
+          echo "SHA256 Fingerprint: $FINGERPRINT"
+          cat > assetlinks.json << EOF
+          [{
+            "relation": ["delegate_permission/common.handle_all_urls"],
+            "target": {
+              "namespace": "android_app",
+              "package_name": "io.github.ipobrief.englishtrainer",
+              "sha256_cert_fingerprints": ["$FINGERPRINT"]
+            }
+          }]
+          EOF
+          cat assetlinks.json
+
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: english-trainer-aab
+          name: english-trainer-release
           path: |
             twa/app-release-bundle.aab
-            twa/android.keystore
-            twa/assetlinks.json
+            android.keystore
+            assetlinks.json
           retention-days: 30
