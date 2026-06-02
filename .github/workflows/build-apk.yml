@@ -17,23 +17,29 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Create TWA project files
+      - name: Install Gradle 8.4
+        run: |
+          wget -q https://services.gradle.org/distributions/gradle-8.4-bin.zip -O /tmp/gradle.zip
+          unzip -q /tmp/gradle.zip -d /opt/gradle
+          echo "/opt/gradle/gradle-8.4/bin" >> $GITHUB_PATH
+
+      - name: Create TWA project
         run: |
           mkdir -p twa/app/src/main/res/values
 
-          cat > twa/settings.gradle << 'GRADLE'
+          cat > twa/settings.gradle << 'EOF'
           include ':app'
-          GRADLE
+          EOF
 
-          cat > twa/build.gradle << 'GRADLE'
+          cat > twa/build.gradle << 'EOF'
           buildscript {
               repositories { google(); mavenCentral() }
               dependencies { classpath 'com.android.tools.build:gradle:8.2.2' }
           }
           allprojects { repositories { google(); mavenCentral() } }
-          GRADLE
+          EOF
 
-          cat > twa/app/build.gradle << 'GRADLE'
+          cat > twa/app/build.gradle << 'EOF'
           plugins { id 'com.android.application' }
           android {
               namespace 'io.github.ipobrief.englishtrainer'
@@ -67,16 +73,15 @@ jobs:
           dependencies {
               implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
           }
-          GRADLE
+          EOF
 
-          cat > twa/app/src/main/AndroidManifest.xml << 'XML'
+          cat > twa/app/src/main/AndroidManifest.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.INTERNET"/>
               <uses-permission android:name="android.permission.RECORD_AUDIO"/>
               <application
                   android:label="영어 트레이너"
-                  android:icon="@mipmap/ic_launcher"
                   android:theme="@android:style/Theme.NoTitleBar">
                   <activity
                       android:name="com.google.androidbrowserhelper.trusted.LauncherActivity"
@@ -109,41 +114,19 @@ jobs:
                   </service>
               </application>
           </manifest>
-          XML
+          EOF
 
-          cat > twa/app/src/main/res/values/colors.xml << 'XML'
+          cat > twa/app/src/main/res/values/colors.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
               <color name="colorPrimary">#0f1226</color>
           </resources>
-          XML
-
-      - name: Add Gradle wrapper
-        run: |
-          cd twa
-          # gradle wrapper JAR 다운로드
-          mkdir -p gradle/wrapper
-          curl -sL "https://github.com/nicoulaj/gradle-wrapper-action/releases/download/v1/gradle-wrapper.jar" \
-            -o gradle/wrapper/gradle-wrapper.jar 2>/dev/null || \
-          curl -sL "https://raw.githubusercontent.com/gradle/gradle/v8.4.0/gradle/wrapper/gradle-wrapper.jar" \
-            -o gradle/wrapper/gradle-wrapper.jar 2>/dev/null || true
-
-          cat > gradle/wrapper/gradle-wrapper.properties << 'EOF'
-          distributionBase=GRADLE_USER_HOME
-          distributionPath=wrapper/dists
-          distributionUrl=https\://services.gradle.org/distributions/gradle-8.4-bin.zip
-          zipStoreBase=GRADLE_USER_HOME
-          zipStorePath=wrapper/dists
           EOF
 
-          cat > gradlew << 'GRADLEW'
-          #!/bin/sh
-          SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
-          exec java -jar "$SCRIPT_DIR/gradle/wrapper/gradle-wrapper.jar" "$@"
-          GRADLEW
-
-          # 공식 gradlew 다운로드
-          curl -sL "https://raw.githubusercontent.com/gradle/gradle/v8.4.0/gradlew" -o gradlew || true
+      - name: Generate Gradle wrapper
+        run: |
+          cd twa
+          gradle wrapper --gradle-version 8.4
           chmod +x gradlew
 
       - name: Generate signing keystore
@@ -167,6 +150,7 @@ jobs:
             | grep "SHA256:" | sed 's/.*SHA256: //')
           echo "Fingerprint: $FP"
           printf '[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"io.github.ipobrief.englishtrainer","sha256_cert_fingerprints":["%s"]}}]' "$FP" > assetlinks.json
+          cat assetlinks.json
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
