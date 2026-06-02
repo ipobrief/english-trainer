@@ -6455,24 +6455,21 @@ function compare(target,said){
   });
   return {score:Math.round(hit/a.length*100),marks};
 }
-// 모바일은 마이크 점유 시 음성인식이 안 되므로 녹음(내 발음 듣기) 비활성
-const IS_MOBILE=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-// 마이크 녹음(내 발음 듣기용) — 스트림을 재사용해 시작 지연/잘림 방지
-let mediaRecorder=null, myVoiceUrl=null, micStream=null;
-async function getMic(){
-  if(micStream && micStream.active) return micStream;
-  micStream=await navigator.mediaDevices.getUserMedia({audio:true});
-  return micStream;
-}
-async function startVoiceRecording(){
+// 마이크 녹음(내 발음 듣기용) — 매번 새 스트림을 열고 끝나면 즉시 해제
+let mediaRecorder=null, myVoiceUrl=null, voiceTarget='learn', voiceStream=null;
+async function startVoiceRecording(target){
+  voiceTarget=target||'learn';
   try{
-    const stream=await getMic();
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    voiceStream=stream;
     const chunks=[];
     mediaRecorder=new MediaRecorder(stream);
     mediaRecorder.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data)};
     mediaRecorder.onstop=()=>{
       if(myVoiceUrl) URL.revokeObjectURL(myVoiceUrl);
       myVoiceUrl=URL.createObjectURL(new Blob(chunks,{type:mediaRecorder.mimeType}));
+      stream.getTracks().forEach(t=>t.stop());  // 마이크 즉시 해제
+      voiceStream=null;
       showMyVoiceButton();
     };
     mediaRecorder.start();
@@ -6483,14 +6480,17 @@ function stopVoiceRecording(){
 }
 function showMyVoiceButton(){
   if(!myVoiceUrl) return;
-  const res=document.getElementById('recResult');
-  if(document.getElementById('btnMyVoice')) return;
+  const isTrain=voiceTarget==='train';
+  const res=document.getElementById(isTrain?'trResult':'recResult');
+  const btnId=isTrain?'btnTrMyVoice':'btnMyVoice';
+  if(!res||document.getElementById(btnId)) return;
+  const eng=(isTrain?trCurrent:current).eng;
   const div=document.createElement('div'); div.style.marginTop='10px';
-  div.innerHTML=`<button id="btnMyVoice">🎧 내 발음 듣기</button>`+
-    `<button id="btnNativeVoice" style="margin-left:8px">🔊 원어민 발음 듣기</button>`;
+  div.innerHTML=`<button id="${btnId}">🎧 내 발음 듣기</button>`+
+    `<button id="${btnId}N" style="margin-left:8px">🔊 원어민 발음 듣기</button>`;
   res.appendChild(div);
-  document.getElementById('btnMyVoice').onclick=()=>{new Audio(myVoiceUrl).play()};
-  document.getElementById('btnNativeVoice').onclick=()=>speak(current.eng);
+  document.getElementById(btnId).onclick=()=>{new Audio(myVoiceUrl).play()};
+  document.getElementById(btnId+'N').onclick=()=>speak(eng);
 }
 async function startRec(){
   if(!SR){document.getElementById('recResult').innerHTML=
@@ -6498,7 +6498,7 @@ async function startRec(){
   recognizing=true;
   document.getElementById('btnRec').textContent='🎙️ 준비 중...';
   document.getElementById('recResult').innerHTML='<span class="meta">🎤 마이크 준비 중...</span>';
-  if(!IS_MOBILE) await startVoiceRecording();  // PC만 녹음(모바일은 인식과 충돌)
+  await startVoiceRecording('learn');
   recog=new SR(); recog.lang='en-US'; recog.interimResults=false; recog.maxAlternatives=1;
   recog.onstart=()=>{                     // 인식 엔진이 실제로 켜진 순간 신호
     beep();
@@ -6638,6 +6638,9 @@ function renderTrain(){
   document.getElementById('trKor').textContent=trCurrent.kor||'(뜻 없음)';
   document.getElementById('trResult').innerHTML='';
   document.getElementById('trManualRow').style.display='none';
+  // '이어서 말하기' 켜져 있으면 자동으로 영어로 말하기 시작
+  if(document.getElementById('autoflow').checked && SR && !trRecognizing)
+    setTimeout(()=>{ if(!trRecognizing) trStartRec(); },700);
 }
 async function trStartRec(){
   if(!trCurrent) return;
@@ -6646,6 +6649,7 @@ async function trStartRec(){
   trRecognizing=true;
   document.getElementById('trBtnRec').textContent='🎙️ 준비 중...';
   document.getElementById('trResult').innerHTML='<span class="meta">🎤 마이크 준비 중...</span>';
+  await startVoiceRecording('train');
   const rec=new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
   rec.onstart=()=>{ beep();
     document.getElementById('trBtnRec').textContent='🎙️ 듣는 중...';
@@ -6668,7 +6672,8 @@ async function trStartRec(){
   };
   rec.onerror=e=>{document.getElementById('trResult').innerHTML=
     `<span class="w-bad">인식 오류: ${e.error} (마이크 권한 확인)</span>`};
-  rec.onend=()=>{trRecognizing=false;document.getElementById('trBtnRec').textContent='🎤 영어로 말하기'};
+  rec.onend=()=>{trRecognizing=false;document.getElementById('trBtnRec').textContent='🎤 영어로 말하기';
+    stopVoiceRecording();};
   rec.start();
 }
 
