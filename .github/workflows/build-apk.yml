@@ -48,8 +48,8 @@ jobs:
                   applicationId 'com.ipobrief.englishtrainer'
                   minSdk 21
                   targetSdk 35
-                  versionCode 6
-                  versionName '1.0.5'
+                  versionCode 7
+                  versionName '1.0.6'
               }
               signingConfigs {
                   release {
@@ -93,6 +93,7 @@ jobs:
               </queries>
               <application
                   android:label="영어 트레이너"
+                  android:icon="@mipmap/ic_launcher"
                   android:theme="@style/Theme.LauncherActivity">
                   <activity
                       android:name="com.google.androidbrowserhelper.trusted.LauncherActivity"
@@ -138,6 +139,18 @@ jobs:
               <color name="colorAccent">#3258d8</color>
           </resources>
           EOF
+
+          # 런처 아이콘 (기존 icon-512.png 사용)
+          mkdir -p twa/app/src/main/res/mipmap-xxxhdpi
+          mkdir -p twa/app/src/main/res/mipmap-xxhdpi
+          mkdir -p twa/app/src/main/res/mipmap-xhdpi
+          mkdir -p twa/app/src/main/res/mipmap-hdpi
+          mkdir -p twa/app/src/main/res/mipmap-mdpi
+          cp icon-512.png twa/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          cp icon-512.png twa/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          cp icon-512.png twa/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          cp icon-512.png twa/app/src/main/res/mipmap-hdpi/ic_launcher.png
+          cp icon-512.png twa/app/src/main/res/mipmap-mdpi/ic_launcher.png
 
           cat > twa/app/src/main/res/values/styles.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
