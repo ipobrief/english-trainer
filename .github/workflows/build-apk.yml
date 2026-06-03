@@ -42,10 +42,10 @@ jobs:
           cat > twa/app/build.gradle << 'EOF'
           plugins { id 'com.android.application' }
           android {
-              namespace 'io.github.ipobrief.englishtrainer'
+              namespace 'com.ipobrief.englishtrainer'
               compileSdk 35
               defaultConfig {
-                  applicationId 'io.github.ipobrief.englishtrainer'
+                  applicationId 'com.ipobrief.englishtrainer'
                   minSdk 21
                   targetSdk 35
                   versionCode 1
@@ -148,7 +148,7 @@ jobs:
             -storepass english123 2>/dev/null \
             | grep "SHA256:" | sed 's/.*SHA256: //')
           echo "Fingerprint: $FP"
-          printf '[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"io.github.ipobrief.englishtrainer","sha256_cert_fingerprints":["%s"]}}]' "$FP" > assetlinks.json
+          printf '[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"com.ipobrief.englishtrainer","sha256_cert_fingerprints":["%s"]}}]' "$FP" > assetlinks.json
           cat assetlinks.json
 
       - name: Upload artifacts
