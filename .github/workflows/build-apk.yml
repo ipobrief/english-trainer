@@ -17,11 +17,11 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install Gradle 8.4
+      - name: Install Gradle 8.11.1
         run: |
-          wget -q https://services.gradle.org/distributions/gradle-8.4-bin.zip -O /tmp/gradle.zip
+          wget -q https://services.gradle.org/distributions/gradle-8.11.1-bin.zip -O /tmp/gradle.zip
           unzip -q /tmp/gradle.zip -d /opt/gradle
-          echo "/opt/gradle/gradle-8.4/bin" >> $GITHUB_PATH
+          echo "/opt/gradle/gradle-8.11.1/bin" >> $GITHUB_PATH
 
       - name: Create TWA project
         run: |
@@ -34,7 +34,7 @@ jobs:
           cat > twa/build.gradle << 'EOF'
           buildscript {
               repositories { google(); mavenCentral() }
-              dependencies { classpath 'com.android.tools.build:gradle:8.2.2' }
+              dependencies { classpath 'com.android.tools.build:gradle:8.9.1' }
           }
           allprojects { repositories { google(); mavenCentral() } }
           EOF
@@ -43,7 +43,7 @@ jobs:
           plugins { id 'com.android.application' }
           android {
               namespace 'com.ipobrief.englishtrainer'
-              compileSdk 35
+              compileSdk 36
               defaultConfig {
                   applicationId 'com.ipobrief.englishtrainer'
                   minSdk 21
@@ -139,7 +139,7 @@ jobs:
       - name: Generate Gradle wrapper
         run: |
           cd twa
-          gradle wrapper --gradle-version 8.4
+          gradle wrapper --gradle-version 8.11.1
           chmod +x gradlew
           echo "android.useAndroidX=true" > gradle.properties
           echo "android.enableJetifier=true" >> gradle.properties
