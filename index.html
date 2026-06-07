@@ -6475,7 +6475,38 @@ function compare(target,said){
 let mediaRecorder=null, myVoiceUrl=null, voiceTarget='learn', recordActive=false;
 function micMode(){return document.getElementById('micMode').value}
 function recBtnId(){return voiceTarget==='train'?'trBtnRec':'btnRec'}
-async function startVoiceRecording(target){
+let silenceTimer=null, silenceCtx=null;
+// 말이 끝나면(무음 지속) 자동으로 녹음 정지
+function setupSilenceAutoStop(stream){
+  stopSilenceAutoStop();
+  try{
+    const Ctx=window.AudioContext||window.webkitAudioContext;
+    const ctx=new Ctx(); silenceCtx=ctx;
+    const src=ctx.createMediaStreamSource(stream);
+    const analyser=ctx.createAnalyser(); analyser.fftSize=2048;
+    src.connect(analyser);
+    const data=new Uint8Array(analyser.fftSize);
+    const startT=Date.now(); let speechStarted=false; let lastLoud=Date.now();
+    const SILENCE=1400;        // 말 끝난 뒤 이만큼 조용하면 정지(ms)
+    const NOSPEECH=5000;       // 아예 말 안 하면 5초 후 정지
+    const MAXREC=12000;        // 최대 12초
+    const THRESH=0.02;         // 소리 감지 임계값
+    silenceTimer=setInterval(()=>{
+      analyser.getByteTimeDomainData(data);
+      let sum=0; for(let i=0;i<data.length;i++){const v=(data[i]-128)/128; sum+=v*v;}
+      const rms=Math.sqrt(sum/data.length); const now=Date.now();
+      if(rms>THRESH){ lastLoud=now; if(now-startT>250) speechStarted=true; }
+      if(speechStarted && now-lastLoud>SILENCE){ stopVoiceRecording(); }
+      else if(!speechStarted && now-startT>NOSPEECH){ stopVoiceRecording(); }
+      else if(now-startT>MAXREC){ stopVoiceRecording(); }
+    },100);
+  }catch(e){ silenceTimer=setTimeout(()=>stopVoiceRecording(),6000); }
+}
+function stopSilenceAutoStop(){
+  if(silenceTimer){ clearInterval(silenceTimer); clearTimeout(silenceTimer); silenceTimer=null; }
+  if(silenceCtx){ try{silenceCtx.close()}catch(e){} silenceCtx=null; }
+}
+async function startVoiceRecording(target,autoStop){
   voiceTarget=target||'learn';
   try{
     const stream=await navigator.mediaDevices.getUserMedia({audio:true});
@@ -6483,18 +6514,23 @@ async function startVoiceRecording(target){
     mediaRecorder=new MediaRecorder(stream);
     mediaRecorder.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data)};
     mediaRecorder.onstop=()=>{
+      stopSilenceAutoStop();
       if(myVoiceUrl) URL.revokeObjectURL(myVoiceUrl);
       myVoiceUrl=URL.createObjectURL(new Blob(chunks,{type:mediaRecorder.mimeType}));
       stream.getTracks().forEach(t=>t.stop());  // 마이크 즉시 해제
       recordActive=false;
       const b=document.getElementById(recBtnId());
       if(b) b.textContent=voiceTarget==='train'?'🎤 영어로 말하기':'🎤 따라 말하기';
+      const res=document.getElementById(voiceTarget==='train'?'trResult':'recResult');
+      if(res && res.innerHTML.indexOf('녹음 중')>=0) res.innerHTML='<span class="meta">녹음 완료 — 아래에서 들어보세요</span>';
       showMyVoiceButton();
     };
     mediaRecorder.start();
-  }catch(e){ mediaRecorder=null; } // 녹음 실패해도 인식은 진행
+    if(autoStop) setupSilenceAutoStop(stream);
+  }catch(e){ mediaRecorder=null; recordActive=false; } // 녹음 실패해도 인식은 진행
 }
 function stopVoiceRecording(){
+  stopSilenceAutoStop();
   if(mediaRecorder&&mediaRecorder.state!=='inactive') mediaRecorder.stop();
 }
 // 녹음 모드: 버튼 한 번 누르면 녹음 시작, 다시 누르면 정지
@@ -6507,6 +6543,17 @@ async function recordToggle(target){
   if(res) res.innerHTML='<span style="color:var(--bad);font-weight:700;font-size:18px">🔴 녹음 중… (버튼 다시 누르면 정지)</span>';
   const b=document.getElementById(recBtnId()); if(b) b.textContent='⏹️ 녹음 정지';
   await startVoiceRecording(target);
+}
+// 자동 녹음: 발음 끝나면 자동 시작 + 말 끝나면 자동 정지
+async function autoRecord(target){
+  if(recordActive) return;
+  voiceTarget=target||'learn';
+  const res=document.getElementById(target==='train'?'trResult':'recResult');
+  recordActive=true;
+  beep();
+  if(res) res.innerHTML='<span style="color:var(--bad);font-weight:700;font-size:18px">🔴 자동 녹음 중… (말이 끝나면 자동 정지)</span>';
+  const b=document.getElementById(recBtnId()); if(b) b.textContent='⏹️ 녹음 정지';
+  await startVoiceRecording(target,true);   // autoStop = true
 }
 function showMyVoiceButton(){
   if(!myVoiceUrl) return;
@@ -6576,10 +6623,15 @@ function renderLearn(){
   const auto=document.getElementById('autoplay').checked;
   const flow=document.getElementById('autoflow').checked;
   if(auto){
-    // 원어민 발음 재생 → 끝나면 자동으로 따라 말하기 시작
-    speak(current.eng, null, ()=>{ if(flow && SR && micMode()==='score') startRec(); });
-  } else if(flow && SR && micMode()==='score'){
-    startRec();
+    // 원어민 발음 재생 → 끝나면 자동으로 따라 말하기/녹음 시작
+    speak(current.eng, null, ()=>{
+      if(!flow) return;
+      if(micMode()==='record') autoRecord('learn');      // 녹음 모드: 자동 녹음+자동 정지
+      else if(SR) startRec();                              // 채점 모드: 자동 음성인식
+    });
+  } else if(flow){
+    if(micMode()==='record') autoRecord('learn');
+    else if(SR) startRec();
   }
 }
 
@@ -6668,9 +6720,12 @@ function renderTrain(){
   document.getElementById('trKor').textContent=trCurrent.kor||'(뜻 없음)';
   document.getElementById('trResult').innerHTML='';
   document.getElementById('trManualRow').style.display='none';
-  // '이어서 말하기' + 점수 모드일 때만 자동으로 영어로 말하기 시작
-  if(document.getElementById('autoflow').checked && SR && micMode()==='score' && !trRecognizing)
-    setTimeout(()=>{ if(!trRecognizing) trStartRec(); },700);
+  // '이어서 말하기'일 때 자동으로 시작 (점수=음성인식 / 녹음=자동녹음)
+  if(document.getElementById('autoflow').checked && !trRecognizing && !recordActive)
+    setTimeout(()=>{
+      if(micMode()==='record'){ autoRecord('train'); }
+      else if(SR && !trRecognizing){ trStartRec(); }
+    },700);
 }
 async function trStartRec(){
   if(!trCurrent) return;
