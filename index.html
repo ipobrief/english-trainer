@@ -6102,6 +6102,22 @@ if('serviceWorker' in navigator){
   .wordinfo .def{color:var(--txt)}
   .wordinfo .ex{color:var(--muted);font-style:italic}
   a{color:var(--accent)}
+  .patcard{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+  .patcard .pp{font-size:22px;font-weight:800;color:var(--accent)}
+  .patcard .pm{font-size:15px;margin:2px 0}
+  .patcard .pr{font-size:13px;color:var(--warn);margin-bottom:8px}
+  .exrow{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);
+    border-radius:10px;padding:8px 10px;margin-top:6px;cursor:pointer}
+  .exrow:hover{border-color:var(--accent)}
+  .exrow .ei{font-size:16px;font-weight:600}
+  .exrow .ek{font-size:12px;color:var(--muted)}
+  .bub-me{background:var(--card2);border:1px solid var(--line);border-radius:14px 14px 14px 4px;
+    padding:9px 13px;margin:8px 0;max-width:88%;cursor:pointer}
+  .bub-you{background:var(--accent);color:#fff;border-radius:14px 14px 4px 14px;
+    padding:9px 13px;margin:8px 0 8px auto;max-width:88%;cursor:pointer}
+  .bub-l{font-size:11px;opacity:.8;margin-bottom:2px}
+  .step-pill{display:inline-block;background:var(--accent);color:#fff;border-radius:999px;
+    padding:4px 12px;font-size:13px;font-weight:700;margin-bottom:4px}
 </style>
 </head>
 <body>
@@ -6922,111 +6938,90 @@ const PATTERNS=[
   ask:{en:"Ask me about my taste.",ko:"내가 ~를 좋아하는지 물어보세요"}}
 ];
 function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
-let lessonScreens=[], lessonStep=0, lessonToday=[];
+let lessonToday=[], lessonPrev=[], lessonStep=1;
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function playSeqEn(arr,i){i=i||0;if(i>=arr.length)return;speak(arr[i],null,()=>setTimeout(()=>playSeqEn(arr,i+1),250));}
 function startLesson(){
   lessonToday=shuffle(PATTERNS).slice(0,5);
-  let prev=[];
-  try{ prev=JSON.parse(lsGet('et_lesson_prev')||'[]'); }catch(e){ prev=[]; }
-  lessonScreens=[];
-  if(prev&&prev.length) lessonScreens.push({t:'review',patterns:prev});
-  lessonScreens.push({t:'overview',patterns:lessonToday});
-  lessonToday.forEach(p=>lessonScreens.push({t:'learn',p}));
-  lessonScreens.push({t:'makeIntro'});
-  lessonToday.forEach(p=>lessonScreens.push({t:'make',p}));
-  lessonScreens.push({t:'dialog',patterns:lessonToday});
-  lessonScreens.push({t:'done'});
-  lessonStep=0;
+  try{ lessonPrev=JSON.parse(lsGet('et_lesson_prev')||'[]'); }catch(e){ lessonPrev=[]; }
+  lessonStep=1;
   document.getElementById('lessonHome').style.display='none';
   document.getElementById('lessonStage').style.display='block';
+  document.getElementById('lessonPrev').style.display='';
+  document.getElementById('lessonNext').style.display='';
   renderLessonScreen();
 }
-function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function exRow(eng,ko){
+function lsExRow(eng,ko){
   const id='lx'+Math.random().toString(36).slice(2,8);
-  setTimeout(()=>{const a=document.getElementById(id+'a');const b=document.getElementById(id+'b');
-    if(a)a.onclick=()=>speak(eng); if(b)b.onclick=()=>speak(eng,0.6);},0);
-  return `<div style="margin:8px 0;padding:10px;border:1px solid var(--line,#2a2e52);border-radius:10px">
-    <div style="font-size:18px;font-weight:700">${esc(eng)}</div>
-    <div class="meta">${esc(ko||'')}</div>
-    <div style="margin-top:6px"><button id="${id}a">🔊 듣기</button>
-    <button id="${id}b" style="margin-left:6px">🐢 천천히</button></div></div>`;
+  setTimeout(()=>{const el=document.getElementById(id);if(el)el.onclick=()=>speak(eng);},0);
+  return `<div id="${id}" class="exrow"><span style="font-size:18px">\u{1F50A}</span>`+
+    `<div><div class="ei">${esc(eng)}</div><div class="ek">${esc(ko||'')}</div></div></div>`;
 }
 function renderLessonScreen(){
-  const sc=lessonScreens[lessonStep];
+  const ps=lessonToday, st=lessonStep;
+  const titles={1:'복습',2:'오늘의 패턴 학습',3:'내 문장 만들기',4:'실전 대화'};
+  document.getElementById('lessonProgress').innerHTML=`<span class="step-pill">STEP ${st}/4 · ${titles[st]}</span>`;
   const body=document.getElementById('lessonBody');
-  const prog=document.getElementById('lessonProgress');
-  prog.textContent=`수업 진행  ${lessonStep+1} / ${lessonScreens.length}`;
-  document.getElementById('lessonPrev').style.visibility=lessonStep>0?'visible':'hidden';
-  const nextBtn=document.getElementById('lessonNext');
-  nextBtn.textContent= sc.t==='done' ? '🏠 처음으로' : (lessonStep===lessonScreens.length-1?'완료':'다음 ➡️');
+  document.getElementById('lessonPrev').style.visibility = st<=1?'hidden':'visible';
+  document.getElementById('lessonNext').textContent = st>=4?'✅ 수업 완료':'다음 단계 ➡️';
   let h='';
-  if(sc.t==='review'){
-    h=`<p class="eng" style="font-size:20px">STEP 1. 복습</p><p class="meta">지난 시간에 배운 패턴이에요. 기억나나요?</p>`;
-    sc.patterns.forEach((p,i)=>{
-      const id='rv'+i;
-      h+=`<div style="margin:10px 0;padding:10px;border:1px solid var(--line,#2a2e52);border-radius:10px">
-        <div style="font-weight:700">${esc(p.ko)}</div>
-        <button id="${id}" style="margin-top:6px">👁️ 패턴 보기</button>
-        <span id="${id}r" style="margin-left:8px;font-weight:700"></span></div>`;
-      setTimeout(()=>{const b=document.getElementById(id);if(b)b.onclick=()=>{
-        document.getElementById(id+'r').textContent=p.p; speak(p.ex[0]);};},0);
+  if(st===1){
+    if(!lessonPrev || !lessonPrev.length){
+      h='<p class="hint">첫 수업이에요! 복습할 어제 패턴이 없으니 바로 시작할게요. <b>다음 단계</b>를 누르세요.</p>';
+    }else{
+      h='<p class="meta" style="margin-bottom:8px">어제 배운 패턴이에요. 뜻을 보고 영어로 말해본 뒤 🔊로 확인하세요.</p>';
+      lessonPrev.forEach((p,i)=>{ const id='rv'+i;
+        h+=`<div class="patcard"><div class="pm">${i+1}. ${esc(p.ko)}</div>`+
+           `<button id="${id}">\u{1F50A} ${esc(p.p)}</button> <span class="pill">${esc(p.pron)}</span></div>`;
+        setTimeout(()=>{const b=document.getElementById(id);if(b)b.onclick=()=>speak((p.ex&&p.ex[0])||p.p.replace('___',''));},0);
+      });
+    }
+  } else if(st===2){
+    h='<p class="meta" style="margin-bottom:8px">패턴 5개 × 예문 5개. 🔊를 누르면 발음을 들려줘요. <b>듣고 따라 읽어보세요.</b></p>';
+    ps.forEach((p,i)=>{ const aid='all'+i;
+      h+=`<div class="patcard"><div class="pp">${i+1}. ${esc(p.p)}</div>`+
+         `<div class="pm">뜻: ${esc(p.ko)}</div><div class="pr">발음: ${esc(p.pron)}</div>`+
+         `<button id="${aid}">▶️ 예문 전체 듣기</button>`;
+      p.ex.forEach((e,j)=>h+=lsExRow(e,p.exKo[j]));
+      h+='</div>';
+      setTimeout(()=>{const b=document.getElementById(aid);if(b)b.onclick=()=>playSeqEn(p.ex);},0);
     });
-  } else if(sc.t==='overview'){
-    h=`<p class="eng" style="font-size:20px">STEP 2. 오늘의 패턴 5개</p>`;
-    sc.patterns.forEach(p=>{h+=`<div style="margin:8px 0"><b style="font-size:18px">${esc(p.p)}</b>
-      <span class="meta"> — ${esc(p.ko)} (${esc(p.pron)})</span></div>`;});
-    h+=`<p class="hint">다음 버튼을 누르면 패턴을 하나씩 배워요.</p>`;
-  } else if(sc.t==='learn'){
-    const p=sc.p;
-    const ti='lt'+Math.random().toString(36).slice(2,8);
-    h=`<p class="eng" style="font-size:24px">${esc(p.p)}</p>
-       <p class="meta" style="font-size:15px">뜻: ${esc(p.ko)} · 발음: ${esc(p.pron)}</p>
-       <p class="hint">🔊 듣고 따라 읽어보세요.</p>`;
-    p.ex.forEach((e,i)=>h+=exRow(e,p.exKo[i]));
-  } else if(sc.t==='makeIntro'){
-    h=`<p class="eng" style="font-size:20px">STEP 3. 내 문장 만들기</p>
-       <p class="hint">한국어 지시를 보고 먼저 영어로 말해본 뒤, 정답을 확인하세요.</p>`;
-  } else if(sc.t==='make'){
-    const p=sc.p; const id='mk'+Math.random().toString(36).slice(2,8);
-    h=`<p class="meta">패턴: <b>${esc(p.p)}</b></p>
-       <p class="eng" style="font-size:20px">"${esc(p.make.ko)}"</p>
-       <button class="primary" id="${id}">👁️ 정답 보기 & 듣기</button>
-       <div id="${id}r" style="margin-top:10px;font-size:20px;font-weight:700"></div>`;
-    setTimeout(()=>{const b=document.getElementById(id);if(b)b.onclick=()=>{
-      document.getElementById(id+'r').textContent=p.make.en; speak(p.make.en);};},0);
-  } else if(sc.t==='dialog'){
-    h=`<p class="eng" style="font-size:20px">STEP 4. 실전 대화</p>
-       <p class="hint">🔊로 상대(Me)의 말을 듣고, 오늘 배운 패턴으로 답해보세요. 👁️로 모범답안 확인.</p>`;
-    sc.patterns.forEach((p,i)=>{
-      const id='dl'+i;
-      h+=`<div style="margin:10px 0;padding:10px;border:1px solid var(--line,#2a2e52);border-radius:10px">
-        <div><b>Me:</b> ${esc(p.ask.en)} <button id="${id}m">🔊</button></div>
-        <div class="meta" style="margin:4px 0">👉 ${esc(p.ask.ko)}</div>
-        <div><b>You:</b> <button id="${id}r">👁️ 모범답안</button>
-          <span id="${id}t" style="margin-left:8px;font-weight:700"></span></div></div>`;
-      setTimeout(()=>{const m=document.getElementById(id+'m');const r=document.getElementById(id+'r');
-        if(m)m.onclick=()=>speak(p.ask.en);
-        if(r)r.onclick=()=>{document.getElementById(id+'t').textContent=p.ex[0];speak(p.ex[0]);};},0);
+  } else if(st===3){
+    h='<p class="meta" style="margin-bottom:8px">한국어 지시를 보고 영어로 말해보세요. 그다음 <b>정답 보기</b>로 확인!</p>';
+    ps.forEach((p,i)=>{ const id='mk'+i;
+      h+=`<div class="patcard"><div class="pp" style="font-size:18px">${i+1}. ${esc(p.p)}</div>`+
+         `<div class="pm" style="margin:6px 0">\u{1F449} ${esc(p.make.ko)}</div>`+
+         `<button id="${id}">\u{1F441}️ 정답 보기 🔊</button>`+
+         `<div id="${id}r" style="display:none;margin-top:8px;font-size:18px;font-weight:700;color:var(--good)"></div></div>`;
+      setTimeout(()=>{const b=document.getElementById(id);if(b)b.onclick=()=>{const r=document.getElementById(id+'r');r.style.display='block';r.textContent=p.make.en;speak(p.make.en);};},0);
     });
-  } else if(sc.t==='done'){
-    h=`<p class="eng" style="font-size:22px">🎉 오늘 수업 완료!</p>
-       <p class="hint">패턴 5개 × 예문 5개 = <b>25문장</b>을 만났어요.<br>
-       내일 복습에서 오늘 패턴이 다시 나와요. 매일 꾸준히!</p>`;
-    try{ lsSet('et_lesson_prev', JSON.stringify(lessonToday)); }catch(e){}
+  } else if(st===4){
+    h='<p class="meta" style="margin-bottom:8px">오늘 배운 패턴으로 대화해요. <b>Me</b> 말풍선을 누르면 들려주고, <b>You</b>를 누르면 답을 보여줘요.</p>';
+    ps.forEach((p,i)=>{ const mid='dm'+i, yid='dy'+i;
+      h+=`<div id="${mid}" class="bub-me"><div class="bub-l">Me \u{1F50A}</div>${esc(p.ask.en)}`+
+         `<div class="ek" style="font-size:12px;opacity:.8">${esc(p.ask.ko)}</div></div>`;
+      h+=`<div id="${yid}" class="bub-you"><div class="bub-l">You \u{1F50A} (눌러서 확인)</div><span id="${yid}t" style="display:none"></span></div>`;
+      setTimeout(()=>{
+        const m=document.getElementById(mid);if(m)m.onclick=()=>speak(p.ask.en);
+        const y=document.getElementById(yid);if(y)y.onclick=()=>{const t=document.getElementById(yid+'t');t.style.display='block';t.textContent=p.ex[0];speak(p.ex[0]);};
+      },0);
+    });
   }
   body.innerHTML=h;
   body.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
-function lessonNextStep(){
-  const sc=lessonScreens[lessonStep];
-  if(sc && sc.t==='done'){ // 처음으로
-    document.getElementById('lessonStage').style.display='none';
-    document.getElementById('lessonHome').style.display='block';
-    return;
-  }
-  if(lessonStep<lessonScreens.length-1){ lessonStep++; renderLessonScreen(); }
+function finishLesson(){
+  try{ lsSet('et_lesson_prev', JSON.stringify(lessonToday.map(p=>({p:p.p,ko:p.ko,pron:p.pron,ex:[p.ex[0]]})))); }catch(e){}
+  document.getElementById('lessonProgress').innerHTML='<span class="step-pill" style="background:var(--good);color:#06281c">\u{1F389} 수업 완료!</span>';
+  document.getElementById('lessonBody').innerHTML=
+    '<p class="hint">오늘 패턴 5개 × 예문 5개, 25문장을 끝냈어요! 내일 수업에서 오늘 패턴을 복습합니다.</p>'+
+    '<div class="row"><button class="primary" id="lessonRestart">\u{1F501} 새 수업 다시 시작</button></div>';
+  document.getElementById('lessonPrev').style.display='none';
+  document.getElementById('lessonNext').style.display='none';
+  setTimeout(()=>{const b=document.getElementById('lessonRestart');if(b)b.onclick=()=>startLesson();},0);
 }
-function lessonPrevStep(){ if(lessonStep>0){ lessonStep--; renderLessonScreen(); } }
+function lessonNextStep(){ if(lessonStep>=4){ finishLesson(); return; } lessonStep++; renderLessonScreen(); }
+function lessonPrevStep(){ if(lessonStep>1){ lessonStep--; renderLessonScreen(); } }
 
 /* ---------- 이벤트 ---------- */
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
