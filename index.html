@@ -6121,6 +6121,7 @@ if('serviceWorker' in navigator){
 <div class="wrap">
   <div class="tabs">
     <div class="tab active" data-tab="learn">학습</div>
+    <div class="tab" data-tab="lesson">💬 대화수업</div>
     <div class="tab" data-tab="train">훈련</div>
     <div class="tab" data-tab="review">틀린 문장 복습</div>
     <div class="tab" data-tab="stats">진도</div>
@@ -6155,6 +6156,24 @@ if('serviceWorker' in navigator){
     </div>
     <p class="hint">팁: 문장이 자동으로 입에서 나올 때까지 🔊듣고 → 🎤따라 말하기를 반복하세요.
     충분히 외웠다면 <b>훈련 탭</b>에서 한글만 보고 영어로 말해 테스트하세요.</p>
+  </section>
+
+  <!-- LESSON (대화수업) -->
+  <section id="lesson" style="display:none">
+    <div class="card" id="lessonHome">
+      <p class="eng" style="font-size:22px">💬 오늘의 대화수업</p>
+      <p class="hint">패턴 5개 × 예문 5개 = 하루 25문장.<br>
+      ① 복습 → ② 패턴 학습/따라 읽기 → ③ 내 문장 만들기 → ④ 실전 대화 순으로 진행해요.</p>
+      <button class="primary" id="btnLessonStart">▶ 오늘 수업 시작</button>
+    </div>
+    <div class="card" id="lessonStage" style="display:none">
+      <div id="lessonProgress" class="meta" style="margin-bottom:8px"></div>
+      <div id="lessonBody"></div>
+      <div class="row" style="margin-top:16px">
+        <button id="lessonPrev">⬅️ 이전</button>
+        <button class="primary" id="lessonNext">다음 ➡️</button>
+      </div>
+    </div>
   </section>
 
   <!-- TRAIN -->
@@ -6819,11 +6838,201 @@ function delSentence(id){
   renderAll(); refreshStats();
 }
 
+/* ========== 대화수업 (Conversation Lesson) ========== */
+const PATTERNS=[
+ {p:"I'm ___",ko:"나는 ~이다",pron:"아임",
+  ex:["I'm Daehan.","I'm Korean.","I'm busy.","I'm tired.","I'm excited."],
+  exKo:["나는 대한이야.","나는 한국인이야.","나는 바빠.","나는 피곤해.","나는 신나."],
+  make:{ko:"학생이라고 말해보세요.",en:"I'm a student."},
+  ask:{en:"What's your name?",ko:"이름을 말해보세요"}},
+ {p:"I live in ___",ko:"나는 ~에 산다",pron:"아이 리브 인",
+  ex:["I live in Korea.","I live in Seoul.","I live in a small town.","I live near the station.","I live with my family."],
+  exKo:["나는 한국에 살아.","나는 서울에 살아.","나는 작은 마을에 살아.","나는 역 근처에 살아.","나는 가족과 살아."],
+  make:{ko:"서울에 산다고 말해보세요.",en:"I live in Seoul."},
+  ask:{en:"Where do you live?",ko:"어디 사는지 말해보세요"}},
+ {p:"I work at ___",ko:"나는 ~에서 일한다",pron:"아이 워크 앳",
+  ex:["I work at a bank.","I work at home.","I work at a hospital.","I work at a cafe.","I work at a school."],
+  exKo:["나는 은행에서 일해.","나는 재택근무해.","나는 병원에서 일해.","나는 카페에서 일해.","나는 학교에서 일해."],
+  make:{ko:"은행에서 일한다고 말해보세요.",en:"I work at a bank."},
+  ask:{en:"Where do you work?",ko:"어디서 일하는지 말해보세요"}},
+ {p:"I like ___",ko:"나는 ~를 좋아한다",pron:"아이 라이크",
+  ex:["I like coffee.","I like music.","I like movies.","I like soccer.","I like reading."],
+  exKo:["나는 커피를 좋아해.","나는 음악을 좋아해.","나는 영화를 좋아해.","나는 축구를 좋아해.","나는 독서를 좋아해."],
+  make:{ko:"커피를 좋아한다고 말해보세요.",en:"I like coffee."},
+  ask:{en:"What do you like?",ko:"무엇을 좋아하는지 말해보세요"}},
+ {p:"I want to ___",ko:"나는 ~하고 싶다",pron:"아이 원투",
+  ex:["I want to travel.","I want to learn English.","I want to rest.","I want to eat.","I want to go home."],
+  exKo:["나는 여행하고 싶어.","나는 영어를 배우고 싶어.","나는 쉬고 싶어.","나는 먹고 싶어.","나는 집에 가고 싶어."],
+  make:{ko:"여행하고 싶다고 말해보세요.",en:"I want to travel."},
+  ask:{en:"What do you want to do?",ko:"하고 싶은 걸 말해보세요"}},
+ {p:"I'm trying to ___",ko:"나는 ~하려고 노력 중이다",pron:"아임 트라잉 투",
+  ex:["I'm trying to study.","I'm trying to save money.","I'm trying to be healthy.","I'm trying to relax.","I'm trying to focus."],
+  exKo:["나는 공부하려고 노력 중이야.","나는 돈을 모으려고 해.","나는 건강해지려고 해.","나는 쉬려고 해.","나는 집중하려고 해."],
+  make:{ko:"영어를 배우려 한다고 말해보세요.",en:"I'm trying to learn English."},
+  ask:{en:"What are you working on?",ko:"노력 중인 걸 말해보세요"}},
+ {p:"I have ___",ko:"나는 ~가 있다",pron:"아이 해브",
+  ex:["I have a question.","I have a car.","I have two kids.","I have a meeting.","I have time."],
+  exKo:["나는 질문이 있어.","나는 차가 있어.","나는 아이가 둘 있어.","나는 회의가 있어.","나는 시간이 있어."],
+  make:{ko:"질문이 있다고 말해보세요.",en:"I have a question."},
+  ask:{en:"What do you have today?",ko:"무엇이 있는지 말해보세요"}},
+ {p:"I'm going to ___",ko:"나는 ~할 것이다",pron:"아임 고잉 투",
+  ex:["I'm going to sleep.","I'm going to study.","I'm going to call you.","I'm going to try.","I'm going to rest."],
+  exKo:["나는 잘 거야.","나는 공부할 거야.","나는 너한테 전화할 거야.","나는 해볼 거야.","나는 쉴 거야."],
+  make:{ko:"잘 거라고 말해보세요.",en:"I'm going to sleep."},
+  ask:{en:"What are your plans?",ko:"앞으로 할 일을 말해보세요"}},
+ {p:"I need ___",ko:"나는 ~가 필요하다",pron:"아이 니드",
+  ex:["I need help.","I need water.","I need a break.","I need more time.","I need your advice."],
+  exKo:["나는 도움이 필요해.","나는 물이 필요해.","나는 휴식이 필요해.","나는 시간이 더 필요해.","나는 네 조언이 필요해."],
+  make:{ko:"도움이 필요하다고 말해보세요.",en:"I need help."},
+  ask:{en:"How can I help?",ko:"필요한 걸 말해보세요"}},
+ {p:"Let's ___",ko:"~하자",pron:"렛츠",
+  ex:["Let's go.","Let's eat.","Let's start.","Let's talk.","Let's meet tomorrow."],
+  exKo:["가자.","먹자.","시작하자.","얘기하자.","내일 만나자."],
+  make:{ko:"먹자고 말해보세요.",en:"Let's eat."},
+  ask:{en:"I'm free now.",ko:"같이 하자고 말해보세요"}},
+ {p:"I think ___",ko:"나는 ~라고 생각한다",pron:"아이 띵크",
+  ex:["I think so.","I think it's good.","I think you're right.","I think it's hard.","I think we can do it."],
+  exKo:["나도 그렇게 생각해.","좋은 것 같아.","네 말이 맞는 것 같아.","어려운 것 같아.","우리 할 수 있을 것 같아."],
+  make:{ko:"그렇게 생각한다고 말해보세요.",en:"I think so."},
+  ask:{en:"What do you think?",ko:"생각을 말해보세요"}},
+ {p:"How was ___?",ko:"~는 어땠어요?",pron:"하우 워즈",
+  ex:["How was your day?","How was the trip?","How was the food?","How was work?","How was it?"],
+  exKo:["오늘 하루 어땠어?","여행 어땠어?","음식 어땠어?","일 어땠어?","그거 어땠어?"],
+  make:{ko:"하루 어땠냐고 물어보세요.",en:"How was your day?"},
+  ask:{en:"I had a long day.",ko:"내 하루가 어땠는지 물어보세요"}},
+ {p:"Can you ___?",ko:"~해줄 수 있어요?",pron:"캔 유",
+  ex:["Can you help me?","Can you wait?","Can you call me?","Can you come?","Can you repeat that?"],
+  exKo:["도와줄 수 있어?","기다려 줄 수 있어?","전화해 줄 수 있어?","올 수 있어?","다시 말해 줄 수 있어?"],
+  make:{ko:"도와줄 수 있냐고 물어보세요.",en:"Can you help me?"},
+  ask:{en:"I'm here if you need anything.",ko:"도와달라고 부탁해보세요"}},
+ {p:"I'm looking for ___",ko:"나는 ~를 찾고 있다",pron:"아임 루킹 포",
+  ex:["I'm looking for my phone.","I'm looking for a job.","I'm looking for the station.","I'm looking for a gift.","I'm looking for help."],
+  exKo:["나는 폰을 찾고 있어.","나는 일자리를 찾고 있어.","나는 역을 찾고 있어.","나는 선물을 찾고 있어.","나는 도움을 찾고 있어."],
+  make:{ko:"내 폰을 찾고 있다고 말해보세요.",en:"I'm looking for my phone."},
+  ask:{en:"Do you need something?",ko:"찾는 걸 말해보세요"}},
+ {p:"It's ___",ko:"그것은 ~이다",pron:"잇츠",
+  ex:["It's hot.","It's cold.","It's delicious.","It's far.","It's okay."],
+  exKo:["더워.","추워.","맛있어.","멀어.","괜찮아."],
+  make:{ko:"덥다고 말해보세요.",en:"It's hot."},
+  ask:{en:"How is it?",ko:"어떤지 말해보세요"}},
+ {p:"Do you like ___?",ko:"~를 좋아해요?",pron:"두 유 라이크",
+  ex:["Do you like coffee?","Do you like music?","Do you like sports?","Do you like Korea?","Do you like it?"],
+  exKo:["커피 좋아해?","음악 좋아해?","운동 좋아해?","한국 좋아해?","그거 마음에 들어?"],
+  make:{ko:"커피 좋아하냐고 물어보세요.",en:"Do you like coffee?"},
+  ask:{en:"Ask me about my taste.",ko:"내가 ~를 좋아하는지 물어보세요"}}
+];
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+let lessonScreens=[], lessonStep=0, lessonToday=[];
+function startLesson(){
+  lessonToday=shuffle(PATTERNS).slice(0,5);
+  let prev=[];
+  try{ prev=JSON.parse(lsGet('et_lesson_prev')||'[]'); }catch(e){ prev=[]; }
+  lessonScreens=[];
+  if(prev&&prev.length) lessonScreens.push({t:'review',patterns:prev});
+  lessonScreens.push({t:'overview',patterns:lessonToday});
+  lessonToday.forEach(p=>lessonScreens.push({t:'learn',p}));
+  lessonScreens.push({t:'makeIntro'});
+  lessonToday.forEach(p=>lessonScreens.push({t:'make',p}));
+  lessonScreens.push({t:'dialog',patterns:lessonToday});
+  lessonScreens.push({t:'done'});
+  lessonStep=0;
+  document.getElementById('lessonHome').style.display='none';
+  document.getElementById('lessonStage').style.display='block';
+  renderLessonScreen();
+}
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function exRow(eng,ko){
+  const id='lx'+Math.random().toString(36).slice(2,8);
+  setTimeout(()=>{const a=document.getElementById(id+'a');const b=document.getElementById(id+'b');
+    if(a)a.onclick=()=>speak(eng); if(b)b.onclick=()=>speak(eng,0.6);},0);
+  return `<div style="margin:8px 0;padding:10px;border:1px solid var(--line,#2a2e52);border-radius:10px">
+    <div style="font-size:18px;font-weight:700">${esc(eng)}</div>
+    <div class="meta">${esc(ko||'')}</div>
+    <div style="margin-top:6px"><button id="${id}a">🔊 듣기</button>
+    <button id="${id}b" style="margin-left:6px">🐢 천천히</button></div></div>`;
+}
+function renderLessonScreen(){
+  const sc=lessonScreens[lessonStep];
+  const body=document.getElementById('lessonBody');
+  const prog=document.getElementById('lessonProgress');
+  prog.textContent=`수업 진행  ${lessonStep+1} / ${lessonScreens.length}`;
+  document.getElementById('lessonPrev').style.visibility=lessonStep>0?'visible':'hidden';
+  const nextBtn=document.getElementById('lessonNext');
+  nextBtn.textContent= sc.t==='done' ? '🏠 처음으로' : (lessonStep===lessonScreens.length-1?'완료':'다음 ➡️');
+  let h='';
+  if(sc.t==='review'){
+    h=`<p class="eng" style="font-size:20px">STEP 1. 복습</p><p class="meta">지난 시간에 배운 패턴이에요. 기억나나요?</p>`;
+    sc.patterns.forEach((p,i)=>{
+      const id='rv'+i;
+      h+=`<div style="margin:10px 0;padding:10px;border:1px solid var(--line,#2a2e52);border-radius:10px">
+        <div style="font-weight:700">${esc(p.ko)}</div>
+        <button id="${id}" style="margin-top:6px">👁️ 패턴 보기</button>
+        <span id="${id}r" style="margin-left:8px;font-weight:700"></span></div>`;
+      setTimeout(()=>{const b=document.getElementById(id);if(b)b.onclick=()=>{
+        document.getElementById(id+'r').textContent=p.p; speak(p.ex[0]);};},0);
+    });
+  } else if(sc.t==='overview'){
+    h=`<p class="eng" style="font-size:20px">STEP 2. 오늘의 패턴 5개</p>`;
+    sc.patterns.forEach(p=>{h+=`<div style="margin:8px 0"><b style="font-size:18px">${esc(p.p)}</b>
+      <span class="meta"> — ${esc(p.ko)} (${esc(p.pron)})</span></div>`;});
+    h+=`<p class="hint">다음 버튼을 누르면 패턴을 하나씩 배워요.</p>`;
+  } else if(sc.t==='learn'){
+    const p=sc.p;
+    const ti='lt'+Math.random().toString(36).slice(2,8);
+    h=`<p class="eng" style="font-size:24px">${esc(p.p)}</p>
+       <p class="meta" style="font-size:15px">뜻: ${esc(p.ko)} · 발음: ${esc(p.pron)}</p>
+       <p class="hint">🔊 듣고 따라 읽어보세요.</p>`;
+    p.ex.forEach((e,i)=>h+=exRow(e,p.exKo[i]));
+  } else if(sc.t==='makeIntro'){
+    h=`<p class="eng" style="font-size:20px">STEP 3. 내 문장 만들기</p>
+       <p class="hint">한국어 지시를 보고 먼저 영어로 말해본 뒤, 정답을 확인하세요.</p>`;
+  } else if(sc.t==='make'){
+    const p=sc.p; const id='mk'+Math.random().toString(36).slice(2,8);
+    h=`<p class="meta">패턴: <b>${esc(p.p)}</b></p>
+       <p class="eng" style="font-size:20px">"${esc(p.make.ko)}"</p>
+       <button class="primary" id="${id}">👁️ 정답 보기 & 듣기</button>
+       <div id="${id}r" style="margin-top:10px;font-size:20px;font-weight:700"></div>`;
+    setTimeout(()=>{const b=document.getElementById(id);if(b)b.onclick=()=>{
+      document.getElementById(id+'r').textContent=p.make.en; speak(p.make.en);};},0);
+  } else if(sc.t==='dialog'){
+    h=`<p class="eng" style="font-size:20px">STEP 4. 실전 대화</p>
+       <p class="hint">🔊로 상대(Me)의 말을 듣고, 오늘 배운 패턴으로 답해보세요. 👁️로 모범답안 확인.</p>`;
+    sc.patterns.forEach((p,i)=>{
+      const id='dl'+i;
+      h+=`<div style="margin:10px 0;padding:10px;border:1px solid var(--line,#2a2e52);border-radius:10px">
+        <div><b>Me:</b> ${esc(p.ask.en)} <button id="${id}m">🔊</button></div>
+        <div class="meta" style="margin:4px 0">👉 ${esc(p.ask.ko)}</div>
+        <div><b>You:</b> <button id="${id}r">👁️ 모범답안</button>
+          <span id="${id}t" style="margin-left:8px;font-weight:700"></span></div></div>`;
+      setTimeout(()=>{const m=document.getElementById(id+'m');const r=document.getElementById(id+'r');
+        if(m)m.onclick=()=>speak(p.ask.en);
+        if(r)r.onclick=()=>{document.getElementById(id+'t').textContent=p.ex[0];speak(p.ex[0]);};},0);
+    });
+  } else if(sc.t==='done'){
+    h=`<p class="eng" style="font-size:22px">🎉 오늘 수업 완료!</p>
+       <p class="hint">패턴 5개 × 예문 5개 = <b>25문장</b>을 만났어요.<br>
+       내일 복습에서 오늘 패턴이 다시 나와요. 매일 꾸준히!</p>`;
+    try{ lsSet('et_lesson_prev', JSON.stringify(lessonToday)); }catch(e){}
+  }
+  body.innerHTML=h;
+  body.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function lessonNextStep(){
+  const sc=lessonScreens[lessonStep];
+  if(sc && sc.t==='done'){ // 처음으로
+    document.getElementById('lessonStage').style.display='none';
+    document.getElementById('lessonHome').style.display='block';
+    return;
+  }
+  if(lessonStep<lessonScreens.length-1){ lessonStep++; renderLessonScreen(); }
+}
+function lessonPrevStep(){ if(lessonStep>0){ lessonStep--; renderLessonScreen(); } }
+
 /* ---------- 이벤트 ---------- */
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
   t.classList.add('active');
-  ['learn','train','review','stats','manage','alarm'].forEach(id=>
+  ['learn','lesson','train','review','stats','manage','alarm'].forEach(id=>
     document.getElementById(id).style.display=id===t.dataset.tab?'block':'none');
   if(t.dataset.tab==='train')renderTrain();
   if(t.dataset.tab==='alarm')renderAlarm();
@@ -6831,6 +7040,9 @@ document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
   if(t.dataset.tab==='stats')refreshStats();
   if(t.dataset.tab==='manage'){renderAll();refreshStats()}
 });
+document.getElementById('btnLessonStart').onclick=()=>startLesson();
+document.getElementById('lessonNext').onclick=()=>lessonNextStep();
+document.getElementById('lessonPrev').onclick=()=>lessonPrevStep();
 document.getElementById('btnPlay').onclick=()=>speak(current.eng);
 document.getElementById('btnSlow').onclick=()=>speak(current.eng,0.65);
 document.getElementById('btnRec').onclick=()=>{if(!recognizing)startRec()};
